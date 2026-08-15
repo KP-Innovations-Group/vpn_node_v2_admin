@@ -16,6 +16,7 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    "types": ["vite/client"],
     "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",

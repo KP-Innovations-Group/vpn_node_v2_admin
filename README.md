@@ -44,6 +44,17 @@ npm run lint:fix  # auto-fix
 npm run format    # prettier
 ```
 
+## Deployment (Vercel)
+
+1. Ensure `npm run build` works locally (it does).
+2. Add a `vercel.json` (already included) for SPA fallback routing.
+3. In the Vercel project settings, set the build command to `npm run build` and the
+   output directory to `dist`.
+4. **Set the environment variable `VITE_API_ORIGIN`** to the node's public API origin
+   (e.g. `https://second.vpnapk.org`). In production the admin app makes absolute
+   requests to `${VITE_API_ORIGIN}/api/v1/...`, so this must be the real node URL
+   (not `localhost`). The Vite dev proxy is only used for local development.
+
 ## API
 
 The panel talks to these endpoints on the node (all under `/api/v1`):

@@ -32,7 +32,12 @@ export interface RequestOptions extends RequestInit {
   skipAuth?: boolean
 }
 
-export const API_BASE = '/api/v1'
+// In dev the Vite proxy forwards /api to the local node, so a relative base
+// works. In production (e.g. Vercel) requests must go to the real node origin,
+// which is provided via VITE_API_ORIGIN at build time.
+const nodeOrigin = import.meta.env.VITE_API_ORIGIN || ''
+export const API_BASE: string =
+  nodeOrigin && import.meta.env.MODE === 'production' ? `${nodeOrigin}/api/v1` : '/api/v1'
 
 export async function apiFetch<T>(
   input: string,
