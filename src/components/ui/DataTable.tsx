@@ -50,27 +50,28 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-surface-100">
+    <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-soft">
+      <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-slate-200">
+        <thead className="bg-slate-50/80 backdrop-blur">
           <tr>
             {columns.map((col, i) => (
               <th
                 key={i}
-                className={`px-4 py-2.5 text-left text-xs font-medium text-gray-600 uppercase tracking-wider ${col.headerClassName ?? ''}`}
+                className={`px-4 py-2.5 text-left text-[11px] font-semibold tracking-widest text-slate-500 uppercase ${col.headerClassName ?? ''}`}
               >
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-slate-200">
           {isLoading && items.length === 0 ? (
             Array.from({ length: skeletonRows }).map((_, i) => (
               <tr key={i}>
                 {columns.map((_, j) => (
                   <td key={j} className="px-4 py-3">
-                    <div className="h-4 animate-pulse rounded bg-gray-200" />
+                    <div className="h-4 animate-pulse rounded bg-slate-200" />
                   </td>
                 ))}
               </tr>
@@ -86,7 +87,7 @@ export function DataTable<T>({
             </tr>
           ) : (
             items.map((row, i) => (
-              <tr key={i} className="hover:bg-surface-50">
+              <tr key={i} className="hover:bg-slate-50/70">
                 {columns.map((col, j) => (
                   <td key={j} className={`px-4 py-2.5 text-sm ${col.className ?? ''}`}>
                     {cellContent(col, row)}
@@ -97,6 +98,7 @@ export function DataTable<T>({
           )}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }
