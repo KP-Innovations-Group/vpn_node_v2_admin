@@ -28,12 +28,14 @@
       radial-gradient(at 50% 88%, rgba(14, 165, 233, 0.08) 0, transparent 50%);
   }
   ::selection {
-    @apply bg-primary-100 text-primary-900;
+    @apply bg-primary-100 text-primary-900 dark:bg-primary-900 dark:text-primary-100;
   }
-  /* scrollbar */
   * {
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
+  }
+  html.dark * {
+    scrollbar-color: #334155 transparent;
   }
   *::-webkit-scrollbar {
     width: 6px;
@@ -43,14 +45,55 @@
     background: #cbd5e1;
     border-radius: 999px;
   }
+  html.dark *::-webkit-scrollbar-thumb {
+    background: #334155;
+  }
   *::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+  }
+  html.dark *::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+}
+
+/* Global dark overrides for any component that still uses light-only classes */
+@layer base {
+  html.dark .bg-white {
+    background-color: rgb(15 23 42);
+  }
+  html.dark .bg-slate-50,
+  html.dark .bg-slate-50\/70,
+  html.dark .bg-slate-50\/60 {
+    background-color: rgb(30 41 59);
+  }
+  html.dark .bg-slate-100 {
+    background-color: rgb(30 41 59);
+  }
+  html.dark .text-slate-900,
+  html.dark .text-slate-800,
+  html.dark .text-slate-700 {
+    color: rgb(241 245 249);
+  }
+  html.dark .text-slate-600,
+  html.dark .text-slate-500 {
+    color: rgb(148 163 184);
+  }
+  html.dark .border-slate-200,
+  html.dark .border-slate-200\/70 {
+    border-color: rgb(30 41 59);
+  }
+  html.dark .ring-slate-200 {
+    --tw-ring-color: rgb(30 41 59);
+  }
+  html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+  html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(30 41 59);
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-white/60;
+    @apply bg-white/70 backdrop-blur-xl border border-white/60 dark:bg-slate-900/70 dark:border-white/10;
   }
   .glass-dark {
     @apply bg-slate-900/70 backdrop-blur-xl border border-white/10;
