@@ -50,28 +50,28 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-soft">
-      <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-slate-200">
-        <thead className="bg-slate-50/80 backdrop-blur">
+    <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-soft dark:border-slate-700 dark:bg-slate-900">
+      <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+      <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+        <thead className="bg-slate-50/80 backdrop-blur dark:bg-slate-800/80">
           <tr>
             {columns.map((col, i) => (
               <th
                 key={i}
-                className={`px-4 py-2.5 text-left text-[11px] font-semibold tracking-widest text-slate-500 uppercase ${col.headerClassName ?? ''}`}
+                className={`whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400 uppercase ${col.headerClassName ?? ''}`}
               >
                 {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200">
+        <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
           {isLoading && items.length === 0 ? (
             Array.from({ length: skeletonRows }).map((_, i) => (
               <tr key={i}>
                 {columns.map((_, j) => (
                   <td key={j} className="px-4 py-3">
-                    <div className="h-4 animate-pulse rounded bg-slate-200" />
+                    <div className="h-4 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
                   </td>
                 ))}
               </tr>
@@ -80,16 +80,16 @@ export function DataTable<T>({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-4 py-8 text-center text-sm text-gray-500"
+                className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400"
               >
                 {emptyMessage}
               </td>
             </tr>
           ) : (
             items.map((row, i) => (
-              <tr key={i} className="hover:bg-slate-50/70">
+              <tr key={i} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/60">
                 {columns.map((col, j) => (
-                  <td key={j} className={`px-4 py-2.5 text-sm ${col.className ?? ''}`}>
+                  <td key={j} className={`px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 ${col.className ?? ''}`}>
                     {cellContent(col, row)}
                   </td>
                 ))}

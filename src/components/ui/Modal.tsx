@@ -17,18 +17,18 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto">
-      <div className="fixed inset-0 bg-black/50" aria-hidden="true" onClick={onClose} />
+    <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto p-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" onClick={onClose} />
       <div
-        className={`relative m-4 w-full ${sizeClasses[size]} rounded-lg bg-white shadow-xl`}
+        className={`relative w-full ${sizeClasses[size]} rounded-[20px] border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
           >
             <span className="sr-only">Close</span>
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

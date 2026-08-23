@@ -95,12 +95,12 @@ export function ConfigDetailPage() {
   }
 
   if (isLoading) {
-    return <div className="text-center py-12 text-gray-500">Loading config...</div>
+    return <div className="text-center py-12 text-slate-500 dark:text-slate-400">Loading config…</div>
   }
 
   if (error || !config) {
     return (
-      <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">
+      <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
         {error instanceof ApiError ? error.message : 'Config not found'}
       </div>
     )
@@ -108,13 +108,13 @@ export function ConfigDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Config: {config.email}</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="break-all text-lg font-bold tracking-tight text-slate-900 dark:text-white">Config: {config.email}</h2>
         <button
           onClick={() => navigate('/configs')}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+          className="self-start rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 sm:self-auto"
         >
-          Back to Configs
+          Back
         </button>
       </div>
 
@@ -143,24 +143,24 @@ export function ConfigDetailPage() {
 
       {config.vlessConfig && (
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Share Link</label>
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Share Link</label>
           <textarea
             readOnly
             value={config.vlessConfig}
             rows={4}
-            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 read-only:bg-surface-50"
+            className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 font-mono text-xs text-slate-600 read-only:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           />
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-2">
         <button
           onClick={toggleEnabled}
           disabled={config.isDeleted}
-          className={`rounded-md px-4 py-2 text-sm font-medium ${
+          className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${
             config.isEnabled
-              ? 'border border-amber-600 text-amber-700 hover:bg-amber-50'
-              : 'border border-green-600 text-green-700 hover:bg-green-50'
+              ? 'border border-amber-600 text-amber-700 hover:bg-amber-50 dark:border-amber-500 dark:text-amber-300'
+              : 'border border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-300'
           } disabled:cursor-not-allowed disabled:opacity-60`}
         >
           {config.isDeleted ? 'Deleted' : config.isEnabled ? 'Disable' : 'Enable'}
@@ -168,21 +168,21 @@ export function ConfigDetailPage() {
         <button
           onClick={deleteConfig}
           disabled={config.isDeleted}
-          className="rounded-md border border-red-600 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-xl border border-red-600 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500 dark:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Delete
         </button>
         <button
           onClick={() => setIncreaseOpen(true)}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
         >
           Increase Quota
         </button>
         <button
           onClick={() => setConnLimitOpen(true)}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
         >
-          Set Connection Limit
+          Connection Limit
         </button>
       </div>
 
@@ -251,10 +251,10 @@ function DetailCard({
   subColor?: string
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <div className="text-xs uppercase text-gray-500">{label}</div>
-      <div className="mt-1 break-words text-sm font-medium text-gray-800">{value}</div>
-      {sub && <div className={`mt-1 text-xs ${subColor ?? 'text-gray-400'}`}>{sub}</div>}
+    <div className="rounded-[16px] border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-800 dark:bg-slate-900">
+      <div className="text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400 uppercase">{label}</div>
+      <div className="mt-1 break-words text-sm font-medium text-slate-900 dark:text-slate-100">{value}</div>
+      {sub && <div className={`mt-1 text-xs ${subColor ?? 'text-slate-400'}`}>{sub}</div>}
     </div>
   )
 }
@@ -262,14 +262,14 @@ function DetailCard({
 function QuotaCard({ used, limit }: { used: number; limit: number }) {
   const pct = limit > 0 ? (used / limit) * 100 : 0
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <div className="text-xs uppercase text-gray-500">Traffic Quota</div>
-      <div className="mt-1 text-sm font-medium text-gray-800">
+    <div className="rounded-[16px] border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-800 dark:bg-slate-900">
+      <div className="text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400 uppercase">Traffic Quota</div>
+      <div className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">
         {formatBytes(used)} / {formatBytes(limit)}
       </div>
-      <div className="mt-2 h-2 w-full rounded bg-gray-200">
+      <div className="mt-2 h-2 w-full rounded bg-slate-200 dark:bg-slate-700">
         <div
-          className={`h-2 w-full rounded ${pct > 90 ? 'bg-red-500' : 'bg-primary-600'}`}
+          className={`h-2 rounded ${pct > 90 ? 'bg-red-500' : 'bg-primary-600'}`}
           style={{ width: `${Math.min(100, pct)}%` }}
         />
       </div>

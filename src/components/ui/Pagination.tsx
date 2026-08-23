@@ -28,33 +28,33 @@ export function Pagination({ page, pageSize, total, onPageChange }: PaginationPr
   }
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 px-2 py-3">
-      <div className="text-sm text-gray-600">
+    <div className="flex flex-col gap-3 border-t border-slate-200 px-2 py-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+      <div className="text-sm text-slate-600 dark:text-slate-400">
         {total === 0
           ? 'No results'
           : `Showing ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, total)} of ${total}`}
       </div>
-      <nav className="flex items-center gap-1">
+      <nav className="flex flex-wrap items-center gap-1">
         <button
           onClick={() => go(page - 1)}
           disabled={page <= 1}
-          className="rounded-md border border-gray-300 px-2.5 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
         >
           Prev
         </button>
         {pages.map((p, i) =>
           p === 'ellipsis' ? (
-            <span key={`e-${i}`} className="px-2 text-sm text-gray-400">
+            <span key={`e-${i}`} className="px-2 text-sm text-slate-400">
               …
             </span>
           ) : (
             <button
               key={p}
               onClick={() => go(p as number)}
-              className={`rounded-md px-2.5 py-1 text-sm ${
+              className={`rounded-xl px-3 py-1.5 text-sm font-semibold ${
                 p === page
-                  ? 'bg-primary-600 text-white'
-                  : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
+                  ? 'bg-primary-600 text-white shadow-sm'
+                  : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
               }`}
             >
               {p}
@@ -64,7 +64,7 @@ export function Pagination({ page, pageSize, total, onPageChange }: PaginationPr
         <button
           onClick={() => go(page + 1)}
           disabled={page >= totalPages}
-          className="rounded-md border border-gray-300 px-2.5 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
         >
           Next
         </button>

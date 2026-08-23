@@ -69,25 +69,69 @@
   html.dark .bg-slate-100 {
     background-color: rgb(30 41 59);
   }
+  html.dark .bg-gray-50,
+  html.dark .bg-gray-100 {
+    background-color: rgb(30 41 59);
+  }
+  html.dark .bg-gray-200 {
+    background-color: rgb(51 65 85);
+  }
   html.dark .text-slate-900,
   html.dark .text-slate-800,
-  html.dark .text-slate-700 {
+  html.dark .text-slate-700,
+  html.dark .text-gray-900,
+  html.dark .text-gray-800,
+  html.dark .text-gray-700 {
     color: rgb(241 245 249);
   }
   html.dark .text-slate-600,
-  html.dark .text-slate-500 {
+  html.dark .text-slate-500,
+  html.dark .text-gray-600,
+  html.dark .text-gray-500,
+  html.dark .text-gray-400 {
     color: rgb(148 163 184);
   }
   html.dark .border-slate-200,
-  html.dark .border-slate-200\/70 {
+  html.dark .border-slate-200\/70,
+  html.dark .border-gray-200,
+  html.dark .border-gray-300 {
     border-color: rgb(30 41 59);
   }
   html.dark .ring-slate-200 {
     --tw-ring-color: rgb(30 41 59);
   }
   html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
-  html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+  html.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
     border-color: rgb(30 41 59);
+  }
+  /* badges */
+  html.dark .bg-green-100 { background-color: rgb(20 83 45); }
+  html.dark .text-green-800 { color: rgb(187 247 208); }
+  html.dark .bg-blue-100 { background-color: rgb(30 58 138); }
+  html.dark .text-blue-800 { color: rgb(191 219 254); }
+  html.dark .bg-purple-100 { background-color: rgb(59 7 100); }
+  html.dark .text-purple-800 { color: rgb(233 213 255); }
+  html.dark .bg-red-50 { background-color: rgb(69 10 10); }
+  html.dark .bg-red-100 { background-color: rgb(127 29 29); }
+  html.dark .text-red-800,
+  html.dark .text-red-600 { color: rgb(254 205 211); }
+  html.dark .text-red-600 { color: rgb(253 164 175); }
+  html.dark .bg-amber-50 { background-color: rgb(69 26 3); }
+  html.dark .text-amber-700,
+  html.dark .text-amber-600,
+  html.dark .text-amber-800 { color: rgb(253 230 138); }
+  /* inputs */
+  html.dark input,
+  html.dark select,
+  html.dark textarea {
+    background-color: rgb(30 41 59);
+    border-color: rgb(51 65 85);
+    color: rgb(241 245 249);
+  }
+  html.dark input::placeholder,
+  html.dark textarea::placeholder {
+    color: rgb(100 116 139);
   }
 }
 

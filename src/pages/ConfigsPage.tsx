@@ -74,13 +74,13 @@ export function ConfigsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Configs</h2>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">Configs</h2>
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={order}
             onChange={(e) => setOrder(e.target.value as 'asc' | 'desc')}
-            className="rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-700"
+            className="min-w-[130px] flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:flex-none"
           >
             <option value="asc">Ascending</option>
             <option value="desc">Descending</option>
@@ -90,7 +90,7 @@ export function ConfigsPage() {
               setXhttpMode(false)
               setCreateOpen(true)
             }}
-            className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+            className="flex-1 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:flex-none"
           >
             Create Config
           </button>
@@ -99,15 +99,15 @@ export function ConfigsPage() {
               setXhttpMode(true)
               setCreateOpen(true)
             }}
-            className="rounded-md border border-primary-600 px-4 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50"
+            className="flex-1 rounded-xl border border-primary-600 bg-white px-4 py-2.5 text-sm font-semibold text-primary-700 hover:bg-primary-50 dark:border-primary-500 dark:bg-slate-900 dark:text-primary-300 sm:flex-none"
           >
-            Create XHTTP Config
+            Create XHTTP
           </button>
         </div>
       </div>
 
       {error && (
-        <p className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+        <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
           {error instanceof ApiError ? error.message : 'Failed to load configs'}
         </p>
       )}

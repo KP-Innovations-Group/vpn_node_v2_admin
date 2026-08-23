@@ -126,12 +126,12 @@ export function SubscriptionDetailPage() {
   }
 
   if (isLoading) {
-    return <div className="text-center py-12 text-gray-500">Loading subscription...</div>
+    return <div className="text-center py-12 text-slate-500 dark:text-slate-400">Loading subscription…</div>
   }
 
   if (error || !sub) {
     return (
-      <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">
+      <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
         {error instanceof ApiError ? error.message : 'Subscription not found'}
       </div>
     )
@@ -139,24 +139,24 @@ export function SubscriptionDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Subscription: {sub.title}</h2>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="break-all text-lg font-bold tracking-tight text-slate-900 dark:text-white">Subscription: {sub.title}</h2>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setEditOpen(true)}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             Edit
           </button>
           <button
             onClick={deleteSub}
-            className="rounded-md border border-red-600 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+            className="rounded-xl border border-red-600 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500 dark:text-red-300"
           >
             Delete
           </button>
           <button
             onClick={() => navigate('/subscriptions')}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             Back
           </button>
@@ -189,12 +189,12 @@ export function SubscriptionDetailPage() {
 
       {sub.description && <DetailCard label="Description" value={sub.description} />}
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">Attached Configs</h3>
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Attached Configs</h3>
           <button
             onClick={() => setAttachOpen(true)}
-            className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
+            className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
           >
             Attach Configs
           </button>
