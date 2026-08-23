@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ApiError, configs, health, subscriptions } from '@/lib/api-client'
+import { ApiError, health, stats } from '@/lib/api-client'
 import { useToast } from '@/lib/useToast'
 import { formatBytes } from '@/lib/utils'
 
@@ -9,21 +9,50 @@ export function DashboardPage() {
   const toast = useToast()
   const [now, setNow] = useState(Date.now())
 
-  const { data, error, isLoading, refetch, isFetching, dataUpdatedAt } = useQuery({
+  const {
+    data: heartbeat,
+    error: hbError,
+    isLoading: hbLoading,
+  } = useQuery({
     queryKey: ['heartbeat'],
     queryFn: () => health.heartbeat(),
     refetchInterval: 30_000,
   })
 
-  const { data: cfgData } = useQuery({
-    queryKey: ['configs', 'dashboard-summary'],
-    queryFn: () => configs.list({ page: 1, pageSize: 500, order: 'desc' }),
+  const {
+    data: summary,
+    error: sumError,
+    isLoading: sumLoading,
+    isFetching: sumFetching,
+    dataUpdatedAt,
+    refetch,
+  } = useQuery({
+    queryKey: ['stats', 'summary'],
+    queryFn: () => stats.summary(),
     refetchInterval: 30_000,
   })
 
-  const { data: subData } = useQuery({
-    queryKey: ['subscriptions', 'dashboard-summary'],
-    queryFn: () => subscriptions.list({ page: 1, pageSize: 100, order: 'desc' }),
+  const { data: traffic } = useQuery({
+    queryKey: ['stats', 'traffic', '7d'],
+    queryFn: () => stats.traffic('7d'),
+    refetchInterval: 60_000,
+  })
+
+  const { data: top } = useQuery({
+    queryKey: ['stats', 'top-consumers'],
+    queryFn: () => stats.topConsumers({ limit: 5, sort: 'quotaUsed' }),
+    refetchInterval: 30_000,
+  })
+
+  const { data: expiring } = useQuery({
+    queryKey: ['stats', 'expiring'],
+    queryFn: () => stats.expiring('7d', 5),
+    refetchInterval: 60_000,
+  })
+
+  const { data: details } = useQuery({
+    queryKey: ['health', 'details'],
+    queryFn: () => health.details(),
     refetchInterval: 30_000,
   })
 
@@ -33,10 +62,9 @@ export function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    if (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Failed to load heartbeat', 'Error')
-    }
-  }, [error, toast])
+    const err = sumError || hbError
+    if (err) toast.error(err instanceof ApiError ? err.message : 'Failed to load stats', 'Error')
+  }, [sumError, hbError, toast])
 
   const lastUpdated = useMemo(() => {
     if (!dataUpdatedAt) return '—'
@@ -46,27 +74,22 @@ export function DashboardPage() {
     return new Date(dataUpdatedAt).toLocaleTimeString()
   }, [dataUpdatedAt, now])
 
-  const fleet = useMemo(() => {
-    if (!cfgData) return null
-    const list = cfgData.configs ?? []
-    const total = cfgData.count
-    const active = list.filter((c) => c.isEnabled && !c.isDeleted).length
-    const disabled = list.filter((c) => !c.isEnabled && !c.isDeleted).length
-    const expiringSoon = list.filter((c) => {
-      const t = new Date(c.expireAt).getTime()
-      return !Number.isNaN(t) && t - Date.now() < 7 * 86400 * 1000 && t > Date.now()
-    }).length
-    const expired = list.filter((c) => new Date(c.expireAt).getTime() < Date.now() && !c.isDeleted).length
-    const quotaUsed = list.reduce((a, c) => a + (c.quotaUsedBytes || 0), 0)
-    const quotaLimit = list.reduce((a, c) => a + (c.quotaLimitBytes || 0), 0)
-    const byXhttp = list.filter((c) => c.configType === 'vless-xhttp').length
-    const byVless = list.filter((c) => c.configType === 'vless').length
-    const sampled = list.length
-    const isSampled = total > sampled
-    return { total, active, disabled, expiringSoon, expired, quotaUsed, quotaLimit, byXhttp, byVless, isSampled, sampled }
-  }, [cfgData])
+  const isLoading = sumLoading && hbLoading
 
-  const quotaPct = fleet && fleet.quotaLimit > 0 ? Math.min(100, (fleet.quotaUsed / fleet.quotaLimit) * 100) : 0
+  // Prefer summary, fallback to heartbeat for system fields
+  const nodeId = summary?.node.nodeId ?? heartbeat?.nodeId ?? '—'
+  const uptimeSec = summary?.node.uptimeSec ?? heartbeat?.uptimeSec ?? 0
+  const cpu = summary?.system.cpuPercent ?? heartbeat?.cpuPercent ?? 0
+  const ram = summary?.system.ramPercent ?? heartbeat?.ramPercent ?? 0
+  const status = summary ? 'ok' : (heartbeat?.status ?? '—')
+  const traffic24h = summary?.traffic.last24hBytes ?? heartbeat?.totalTrafficUsed ?? 0
+  const isOk = status === 'ok'
+
+  const fleet = summary?.fleet
+  const subs = summary?.subscriptions
+  const live = summary?.live
+
+  const quotaPct = fleet && fleet.quotaLimitBytes > 0 ? Math.min(100, (fleet.quotaUsedBytes / fleet.quotaLimitBytes) * 100) : 0
 
   return (
     <div className="space-y-6">
@@ -76,12 +99,15 @@ export function DashboardPage() {
           <h2 className="text-xl font-bold tracking-tight text-slate-900">Node overview</h2>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 shadow-sm">
-              <span className={`h-2 w-2 rounded-full ${data?.status === 'ok' ? 'bg-emerald-500 animate-pulseSoft' : 'bg-amber-500'}`} />
-              {data?.status ?? '—'} • {lastUpdated}
+              <span className={`h-2 w-2 rounded-full ${isOk ? 'bg-emerald-500 animate-pulseSoft' : 'bg-amber-500'}`} />
+              {status} • {lastUpdated}
             </span>
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-2.5 py-1 text-white">
-              Auto-refresh 30s
+              Auto-refresh 30s • Bearer JWT
             </span>
+            {summary?.node.version && (
+              <span className="hidden sm:inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs">v{summary.node.version}</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -94,20 +120,19 @@ export function DashboardPage() {
           </Link>
           <button
             onClick={() => refetch()}
-            disabled={isLoading || isFetching}
+            disabled={isLoading || sumFetching}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 px-4 py-2 text-xs font-semibold text-white shadow-glow hover:from-primary-700 hover:to-primary-800 disabled:opacity-60"
           >
-            <svg className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`h-4 w-4 ${sumFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M4 19a9 9 0 015-15.2M20 5a9 9 0 01-5 15.2" />
             </svg>
-            {isFetching ? 'Refreshing…' : 'Refresh'}
+            {sumFetching ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
       </div>
 
-      {/* hero row */}
+      {/* hero + gauges */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* status hero */}
         <div className="relative overflow-hidden rounded-[20px] border border-white bg-gradient-to-br from-slate-900 via-slate-800 to-primary-900 p-5 text-white shadow-card lg:col-span-5">
           <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary-500/20 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-accent-600/20 blur-3xl" />
@@ -116,33 +141,37 @@ export function DashboardPage() {
               <div>
                 <p className="text-[11px] font-semibold tracking-widest text-white/60">SYSTEM STATUS</p>
                 <div className="mt-2 flex items-center gap-3">
-                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${data?.status === 'ok' ? 'bg-emerald-500' : 'bg-amber-500'} shadow-lg`}>
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${isOk ? 'bg-emerald-500' : 'bg-amber-500'} shadow-lg`}>
                     <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={data?.status === 'ok' ? 'M5 13l4 4L19 7' : 'M12 8v4m0 4h.01'} />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isOk ? 'M5 13l4 4L19 7' : 'M12 8v4m0 4h.01'} />
                     </svg>
                   </span>
                   <div>
-                    <p className="text-lg font-bold leading-none capitalize">{data?.status ?? '—'}</p>
-                    <p className="text-xs font-medium text-white/70">All systems operational</p>
+                    <p className="text-lg font-bold leading-none capitalize">{status}</p>
+                    <p className="text-xs font-medium text-white/70">
+                      {live ? `${live.onlineUsers} online • ${live.activeConnections} conns` : heartbeat ? `${heartbeat.currentUsers} online` : '—'}
+                    </p>
                   </div>
                 </div>
               </div>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold ring-1 ring-white/15">Single node</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold ring-1 ring-white/15">
+                {summary?.node.xrayVersion ? `Xray ${summary.node.xrayVersion}` : details?.xray.version ? `Xray ${details.xray.version}` : 'Single node'}
+              </span>
             </div>
 
             <div className="mt-6 grid grid-cols-3 gap-3">
               <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10 backdrop-blur">
                 <p className="text-[11px] font-semibold tracking-widest text-white/60">UPTIME</p>
-                <p className="mt-1 font-mono text-sm font-bold">{data ? formatUptime(data.uptimeSec) : '—'}</p>
-                <p className="text-[11px] text-white/60">{data ? `${Math.floor(data.uptimeSec / 86400)} days` : '—'}</p>
+                <p className="mt-1 font-mono text-sm font-bold">{formatUptime(uptimeSec)}</p>
+                <p className="text-[11px] text-white/60">{uptimeSec ? `${Math.floor(uptimeSec / 86400)} days` : '—'}</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10 backdrop-blur">
                 <p className="text-[11px] font-semibold tracking-widest text-white/60">NODE ID</p>
-                <p className="mt-1 truncate font-mono text-xs font-bold" title={data?.nodeId}>
-                  {data?.nodeId ? `${data.nodeId.slice(0, 8)}…` : '—'}
+                <p className="mt-1 truncate font-mono text-xs font-bold" title={nodeId}>
+                  {nodeId !== '—' ? `${nodeId.slice(0, 8)}…` : '—'}
                 </p>
                 <button
-                  onClick={() => data?.nodeId && navigator.clipboard.writeText(data.nodeId)}
+                  onClick={() => nodeId !== '—' && navigator.clipboard.writeText(nodeId)}
                   className="mt-1 text-[11px] font-medium text-white/70 hover:text-white"
                 >
                   Copy full ↗
@@ -150,70 +179,44 @@ export function DashboardPage() {
               </div>
               <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10 backdrop-blur">
                 <p className="text-[11px] font-semibold tracking-widest text-white/60">TRAFFIC 24H</p>
-                <p className="mt-1 text-sm font-bold">{data ? formatBytes(data.totalTrafficUsed) : '—'}</p>
-                <p className="text-[11px] text-white/60">from heartbeat</p>
+                <p className="mt-1 text-sm font-bold">{formatBytes(traffic24h)}</p>
+                <p className="text-[11px] text-white/60">{summary ? `${formatBytes(summary.traffic.todayBytes)} today` : 'from heartbeat'}</p>
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-2 text-[11px] font-medium text-white/70">
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] font-medium text-white/70">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 ring-1 ring-white/10">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                Xray active
+                Xray {details?.xray.inbounds.length ?? 0} inbounds
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 ring-1 ring-white/10">
-                Quota gate • Conn gate
+                {details?.system.goVersion ?? summary?.system.goroutines != null ? `${details?.system.goVersion ?? ''} • ${summary?.system.goroutines ?? details?.system.goroutines ?? 0} gr` : 'Quota • Conn gate'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* resource gauges */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-7">
+          <GaugeCard label="CPU" value={cpu} icon={<CpuIcon />} gradient="from-primary-600 to-accent-600" isLoading={isLoading} />
+          <GaugeCard label="RAM" value={ram} icon={<RamIcon />} gradient="from-violet-600 to-primary-600" isLoading={isLoading} />
           <GaugeCard
-            label="CPU"
-            value={data?.cpuPercent ?? 0}
-            icon={<CpuIcon />}
-            gradient="from-primary-600 to-accent-600"
+            label="DISK"
+            value={summary?.system.diskUsedPercent ?? details?.system.diskUsedPercent ?? 0}
+            icon={<DiskIcon />}
+            gradient="from-amber-500 to-rose-500"
             isLoading={isLoading}
+            sub={summary?.system.diskTotalBytes ? formatBytes(summary.system.diskTotalBytes) + ' total' : undefined}
           />
-          <GaugeCard
-            label="RAM"
-            value={data?.ramPercent ?? 0}
-            icon={<RamIcon />}
-            gradient="from-violet-600 to-primary-600"
-            isLoading={isLoading}
-          />
-          <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-soft sm:col-span-1">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold tracking-widest text-slate-500">TRAFFIC</p>
-              <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white">24H</span>
-            </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <p className="text-2xl font-bold tracking-tight text-slate-900">{data ? formatBytes(data.totalTrafficUsed) : '—'}</p>
-            </div>
-            <p className="text-xs font-medium text-slate-500">Total up+down • 10-min buckets</p>
-            <div className="mt-4 h-2 rounded-full bg-slate-100">
-              <div
-                className="h-2 rounded-full bg-gradient-to-r from-primary-600 to-accent-600 transition-all"
-                style={{ width: data ? `${Math.min(100, (data.totalTrafficUsed / (50 * 1024 ** 3)) * 100)}%` : '0%' }}
-              />
-            </div>
-            <p className="mt-2 text-[11px] font-medium text-slate-400">Visual cap 50 GB • live sum from traffic_usage10m</p>
-            <Link to="/configs" className="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-xl bg-slate-900 py-2 text-xs font-semibold text-white hover:bg-slate-800">
-              View configs
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </Link>
-          </div>
         </div>
       </div>
 
-      {/* fleet overview */}
+      {/* traffic sparkline + fleet */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft lg:col-span-8">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold tracking-tight text-slate-900">Fleet overview</h3>
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-              {subData ? `${subData.count} subscriptions` : '—'} • {fleet ? `${fleet.total} configs` : '…'}
+              {subs ? `${subs.count} subs • ${subs.totalAttachedConfigs} attached` : '—'} • {fleet ? `${fleet.totalConfigs} configs` : '…'}
             </span>
           </div>
 
@@ -226,16 +229,16 @@ export function DashboardPage() {
           ) : (
             <>
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <FleetStat label="Total" value={fleet.total} sub={`${fleet.byVless} VLESS • ${fleet.byXhttp} XHTTP`} tone="slate" />
-                <FleetStat label="Active" value={fleet.active} sub={`${fleet.total ? Math.round((fleet.active / fleet.total) * 100) : 0}% of fleet`} tone="emerald" />
-                <FleetStat label="Disabled" value={fleet.disabled} sub="needs attention" tone="amber" />
-                <FleetStat label="Expired" value={fleet.expired} sub={`${fleet.expiringSoon} expiring 7d`} tone="rose" />
+                <FleetStat label="Total" value={fleet.totalConfigs} sub={`${fleet.byType['vless'] ?? 0} VLESS • ${fleet.byType['vless-xhttp'] ?? 0} XHTTP`} tone="slate" />
+                <FleetStat label="Active" value={fleet.active} sub={`${fleet.totalConfigs ? Math.round((fleet.active / fleet.totalConfigs) * 100) : 0}% of fleet`} tone="emerald" />
+                <FleetStat label="Disabled" value={fleet.disabled} sub={`${fleet.deleted} deleted`} tone="amber" />
+                <FleetStat label="Expired" value={fleet.expired} sub={`${fleet.expiringIn7d} expiring 7d`} tone="rose" />
               </div>
 
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-700">Quota consumption {fleet.isSampled && <span className="font-normal text-slate-500">• sample {fleet.sampled}/{fleet.total}</span>}</p>
-                  <p className="font-mono text-xs font-bold text-slate-900">{formatBytes(fleet.quotaUsed)} / {formatBytes(fleet.quotaLimit)}</p>
+                  <p className="text-xs font-semibold text-slate-700">Quota consumption</p>
+                  <p className="font-mono text-xs font-bold text-slate-900">{formatBytes(fleet.quotaUsedBytes)} / {formatBytes(fleet.quotaLimitBytes)}</p>
                 </div>
                 <div className="mt-3 h-2.5 rounded-full bg-white ring-1 ring-slate-200">
                   <div
@@ -244,90 +247,164 @@ export function DashboardPage() {
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px] font-medium text-slate-500">
-                  <span>{quotaPct.toFixed(1)}% used</span>
-                  <span>{formatBytes(Math.max(0, fleet.quotaLimit - fleet.quotaUsed))} remaining</span>
+                  <span>{quotaPct.toFixed(1)}% used • {fleet.avgQuotaUsedPct.toFixed(1)}% avg</span>
+                  <span>{formatBytes(Math.max(0, fleet.quotaLimitBytes - fleet.quotaUsedBytes))} remaining</span>
                 </div>
-                {fleet.isSampled && (
-                  <p className="mt-2 text-[11px] text-amber-700">Showing first {fleet.sampled} configs — for exact totals add a <code className="rounded bg-white px-1 py-0.5 ring-1 ring-slate-200">GET /api/v1/stats/summary</code> endpoint.</p>
-                )}
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <Link to="/configs" className="rounded-2xl border border-slate-200 bg-white p-3 hover:bg-slate-50">
-                  <p className="text-xs font-semibold text-slate-900">Browse configs →</p>
-                  <p className="text-xs text-slate-500">Filter by type, status, quota</p>
-                </Link>
+                <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                  <p className="text-[11px] font-semibold tracking-widest text-slate-500">LOAD / GOROUTINES</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">{summary?.system.load1?.toFixed(2) ?? details?.system.load1?.toFixed(2) ?? '—'} load1</p>
+                  <p className="text-xs text-slate-500">{summary?.system.goroutines ?? details?.system.goroutines ?? '—'} goroutines • {formatBytes(summary?.system.ramTotalBytes ?? details?.system.ramTotalBytes ?? 0)} RAM</p>
+                </div>
                 <Link to="/subscriptions" className="rounded-2xl border border-slate-200 bg-white p-3 hover:bg-slate-50">
                   <p className="text-xs font-semibold text-slate-900">Subscriptions →</p>
-                  <p className="text-xs text-slate-500">{subData?.count ?? 0} bundles • manage attachments</p>
+                  <p className="text-xs text-slate-500">{subs?.count ?? 0} bundles • {subs?.totalAttachedConfigs ?? 0} attached configs</p>
                 </Link>
                 <a href="/swagger" target="_blank" rel="noreferrer" className="rounded-2xl border border-primary-200 bg-primary-50 p-3 hover:bg-primary-100">
                   <p className="text-xs font-semibold text-primary-900">API reference →</p>
-                  <p className="text-xs text-primary-700">XHTTP, quota, heartbeat</p>
+                  <p className="text-xs text-primary-700">stats/summary • traffic • xray</p>
                 </a>
               </div>
             </>
           )}
         </div>
 
-        {/* system / quick actions */}
-        <div className="space-y-4 lg:col-span-4">
-          <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft">
-            <h3 className="text-sm font-bold tracking-tight text-slate-900">Quick actions</h3>
-            <div className="mt-4 space-y-2">
-              <Link to="/configs" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 hover:bg-white">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-600 text-white">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                </span>
-                <span>
-                  <span className="block text-xs font-semibold text-slate-900">Create config</span>
-                  <span className="block text-xs text-slate-500">VLESS / VLESS-XHTTP</span>
-                </span>
-              </Link>
-              <Link to="/subscriptions" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                </span>
-                <span>
-                  <span className="block text-xs font-semibold text-slate-900">New subscription</span>
-                  <span className="block text-xs text-slate-500">Bundle configs for users</span>
-                </span>
-              </Link>
-              <a href="/swagger" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-600 text-white">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                </span>
-                <span>
-                  <span className="block text-xs font-semibold text-slate-900">Open Swagger</span>
-                  <span className="block text-xs text-slate-500">Explore backend API</span>
-                </span>
-              </a>
+        <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft lg:col-span-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">Traffic — 7d</h3>
+            <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white">{traffic?.granularity ?? '—'}</span>
+          </div>
+          <p className="mt-1 text-xs font-medium text-slate-500">
+            {traffic ? `${formatBytes(traffic.totalBytes)} total • ${traffic.points.length} buckets` : 'Loading buckets from traffic_usage10m…'}
+          </p>
+          <div className="mt-4 h-[96px] rounded-xl bg-slate-50 ring-1 ring-slate-200">
+            {traffic?.points?.length ? <Sparkline points={traffic.points} /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No data</div>}
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-200">
+              <p className="text-[11px] font-semibold tracking-widest text-slate-500">TODAY</p>
+              <p className="font-mono text-xs font-bold text-slate-900">{summary ? formatBytes(summary.traffic.todayBytes) : '—'}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-200">
+              <p className="text-[11px] font-semibold tracking-widest text-slate-500">24H</p>
+              <p className="font-mono text-xs font-bold text-slate-900">{summary ? formatBytes(summary.traffic.last24hBytes) : '—'}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-2 ring-1 ring-slate-200">
+              <p className="text-[11px] font-semibold tracking-widest text-slate-500">7D</p>
+              <p className="font-mono text-xs font-bold text-slate-900">{summary ? formatBytes(summary.traffic.last7dBytes) : '—'}</p>
             </div>
           </div>
-
-          <div className="rounded-[20px] border border-slate-200 bg-gradient-to-br from-primary-600 to-accent-600 p-5 text-white shadow-glow">
-            <h3 className="text-sm font-bold">Single-node tip</h3>
-            <p className="mt-1 text-xs leading-relaxed text-white/80">
-              This panel is scoped to <span className="font-semibold text-white">one edge node</span>. Heartbeat is at <code className="rounded bg-white/15 px-1 py-0.5 font-mono text-[11px]">/health/heartbeat</code> (no auth prefix).
-              For a complete ops view add the stats APIs proposed below.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium ring-1 ring-white/20">Gopsutil live</span>
-              <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium ring-1 ring-white/20">Traffic 10m buckets</span>
-            </div>
-          </div>
+          <p className="mt-2 text-[11px] font-medium text-slate-400">Source: traffic_usage10m • group by {traffic?.granularity ?? '1h'} with COALESCE</p>
         </div>
       </div>
 
-      {!data && !isLoading && (
+      {/* top consumers + expiring + xray */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft lg:col-span-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">Top consumers</h3>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">by quotaUsed</span>
+          </div>
+          {!top?.consumers?.length ? (
+            <p className="mt-4 text-center text-xs text-slate-500">No consumers</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {top.consumers.map((c) => {
+                const pct = c.quotaLimitBytes > 0 ? Math.min(100, (c.quotaUsedBytes / c.quotaLimitBytes) * 100) : 0
+                return (
+                  <li key={c.uuid} className="flex items-center gap-3 py-3">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white ${c.configType === 'vless-xhttp' ? 'bg-accent-600' : 'bg-primary-600'}`}>
+                      {c.email.slice(0, 1).toUpperCase()}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-slate-900">{c.email} <span className="font-normal text-slate-500">• {c.configType}</span></p>
+                      <div className="mt-1 h-1.5 rounded-full bg-slate-100">
+                        <div className="h-1.5 rounded-full bg-primary-600" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                    <span className="shrink-0 font-mono text-xs font-bold text-slate-700">{formatBytes(c.quotaUsedBytes)}<span className="font-normal text-slate-500"> / {formatBytes(c.quotaLimitBytes)}</span></span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          <Link to="/configs" className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">View all configs →</Link>
+        </div>
+
+        <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft lg:col-span-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">Expiring soon</h3>
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">within 7d • {expiring?.count ?? 0}</span>
+          </div>
+          {!expiring?.configs?.length ? (
+            <p className="mt-4 text-center text-xs text-slate-500">No configs expiring within 7 days</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {expiring.configs.map((c) => (
+                <li key={c.uuid} className="flex items-center justify-between py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-slate-900">{c.email}</p>
+                    <p className="text-xs text-slate-500">{new Date(c.expireAt).toLocaleDateString()} • {c.isEnabled ? 'active' : 'disabled'}</p>
+                  </div>
+                  <span className="ml-2 shrink-0 rounded-full bg-slate-900 px-2.5 py-1 font-mono text-xs font-bold text-white">{formatBytes(c.quotaUsedBytes)} / {formatBytes(c.quotaLimitBytes)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {fleet && fleet.expiringIn7d > (expiring?.configs.length ?? 0) && (
+            <p className="mt-2 text-center text-[11px] font-medium text-slate-500">+{fleet.expiringIn7d - (expiring?.configs.length ?? 0)} more — see stats/expiring?within=7d</p>
+          )}
+        </div>
+      </div>
+
+      {/* system + xray details */}
+      {details && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft lg:col-span-8">
+            <h3 className="text-sm font-bold tracking-tight text-slate-900">System details</h3>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Detail label="RAM" value={`${details.system.ramTotalBytes ? formatBytes(details.system.ramTotalBytes) : '—'} total`} sub={`${ram.toFixed(1)}% used`} />
+              <Detail label="Disk" value={`${details.system.diskTotalBytes ? formatBytes(details.system.diskTotalBytes) : '—'} total`} sub={`${details.system.diskUsedPercent.toFixed(1)}% used`} />
+              <Detail label="Go" value={details.system.goVersion} sub={`${details.system.goroutines} goroutines`} />
+              <Detail label="Load1" value={details.system.load1.toFixed(2)} sub={`${summary?.system.goroutines ?? details.system.goroutines} gr total`} />
+            </div>
+          </div>
+          <div className="rounded-[20px] border border-slate-200 bg-slate-900 p-5 text-white shadow-card lg:col-span-4">
+            <h3 className="text-sm font-bold">Xray</h3>
+            <p className="mt-1 text-xs text-white/70">{details.xray.version ? `v${details.xray.version}` : '—'} • {details.xray.uptimeSec ? formatUptime(details.xray.uptimeSec) + ' up' : '—'}</p>
+            <ul className="mt-3 space-y-1.5">
+              {details.xray.inbounds.map((ib) => (
+                <li key={ib.tag} className="flex items-center justify-between rounded-xl bg-white/10 px-3 py-2 text-xs ring-1 ring-white/10">
+                  <span className="font-semibold">{ib.tag}</span>
+                  <span className="font-mono text-white/70">{ib.protocol} • {ib.listen}</span>
+                </li>
+              ))}
+              {!details.xray.inbounds.length && <li className="text-xs text-white/60">No inbounds reported</li>}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {!summary && !isLoading && (
         <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-6 text-center">
-          <p className="text-sm font-semibold text-amber-900">No heartbeat data available</p>
+          <p className="text-sm font-semibold text-amber-900">Stats unavailable — showing heartbeat fallback</p>
           <p className="mx-auto mt-1 max-w-xl text-xs leading-relaxed text-amber-800">
-            The node didn’t respond. Check that <code className="rounded bg-white px-1 py-0.5 font-mono ring-1 ring-amber-200">/health/heartbeat</code> is reachable and
-            <code className="ml-1 rounded bg-white px-1 py-0.5 font-mono ring-1 ring-amber-200">VITE_API_ORIGIN</code> is correct.
+            <code className="rounded bg-white px-1 py-0.5 font-mono ring-1 ring-amber-200">GET /api/v1/stats/summary</code> requires <code className="rounded bg-white px-1 py-0.5 font-mono ring-1 ring-amber-200">Authorization: Bearer &lt;JWT&gt;</code> (NodeAuth). Ensure admin login succeeded.
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+function Detail({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+      <p className="text-[11px] font-semibold tracking-widest text-slate-500">{label}</p>
+      <p className="mt-1 text-xs font-bold text-slate-900">{value}</p>
+      <p className="text-xs text-slate-500">{sub}</p>
     </div>
   )
 }
@@ -357,17 +434,20 @@ function GaugeCard({
   icon,
   gradient,
   isLoading,
+  sub,
 }: {
   label: string
   value: number
   icon: React.ReactNode
   gradient: string
   isLoading: boolean
+  sub?: string
 }) {
   const pct = Math.max(0, Math.min(100, value))
   const dash = 2 * Math.PI * 46
   const offset = dash - (pct / 100) * dash
   const tone = pct > 85 ? 'text-rose-600' : pct > 65 ? 'text-amber-600' : 'text-primary-600'
+  const gid = `grad-${label.toLowerCase()}`
   return (
     <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-soft">
       <div className="flex items-center justify-between">
@@ -381,7 +461,7 @@ function GaugeCard({
             cx="55"
             cy="55"
             r="46"
-            stroke="url(#grad)"
+            stroke={`url(#${gid})`}
             strokeWidth="10"
             fill="none"
             strokeLinecap="round"
@@ -390,9 +470,9 @@ function GaugeCard({
             className="transition-all duration-700"
           />
           <defs>
-            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#4f46e5" />
-              <stop offset="100%" stopColor="#a855f7" />
+              <stop offset="100%" stopColor={label === 'DISK' ? '#f59e0b' : '#a855f7'} />
             </linearGradient>
           </defs>
         </svg>
@@ -405,8 +485,38 @@ function GaugeCard({
       <div className="mt-2 h-1.5 rounded-full bg-slate-100">
         <div className={`h-1.5 rounded-full bg-gradient-to-r ${gradient}`} style={{ width: `${pct}%` }} />
       </div>
-      <p className="mt-2 text-center text-[11px] font-medium text-slate-400">gopsutil • live from node</p>
+      <p className="mt-2 text-center text-[11px] font-medium text-slate-400">{sub ?? 'gopsutil • live from node'}</p>
     </div>
+  )
+}
+
+function Sparkline({ points }: { points: { totalBytes: number }[] }) {
+  const vals = points.map((p) => p.totalBytes)
+  const max = Math.max(...vals, 1)
+  const min = Math.min(...vals)
+  const range = max - min || 1
+  const w = 320
+  const h = 80
+  const step = w / Math.max(1, vals.length - 1)
+  const d = vals
+    .map((v, i) => {
+      const x = i * step
+      const y = h - 8 - ((v - min) / range) * (h - 24)
+      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+    })
+    .join(' ')
+  const area = `${d} L ${w} ${h} L 0 ${h} Z`
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full">
+      <path d={area} fill="url(#sparkFill)" opacity={0.15} />
+      <path d={d} fill="none" stroke="#4f46e5" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      <defs>
+        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.4} />
+          <stop offset="100%" stopColor="#4f46e5" stopOpacity={0} />
+        </linearGradient>
+      </defs>
+    </svg>
   )
 }
 
@@ -419,6 +529,13 @@ const CpuIcon = () => (
 const RamIcon = () => (
   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7h16M4 17h16M7 7v10M17 7v10M9 10h6M9 14h6" />
+  </svg>
+)
+const DiskIcon = () => (
+  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 7a5 5 0 015 5 5 5 0 01-5 5 5 5 0 01-5-5 5 5 0 015-5z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 12V7M9 9l3-2 3 2" />
+    <circle cx="12" cy="12" r="8" strokeWidth={1.8} />
   </svg>
 )
 

@@ -2,7 +2,7 @@ import { Outlet, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { NavSidebar } from '@/components/layout/NavSidebar'
 import { useQuery } from '@tanstack/react-query'
-import { health } from '@/lib/api-client'
+import { health, stats } from '@/lib/api-client'
 
 export function MainLayout() {
   const { logout } = useAuth()
@@ -11,6 +11,12 @@ export function MainLayout() {
     queryKey: ['heartbeat'],
     queryFn: () => health.heartbeat(),
     refetchInterval: 30_000,
+  })
+  const { data: summary } = useQuery({
+    queryKey: ['stats', 'summary'],
+    queryFn: () => stats.summary(),
+    refetchInterval: 30_000,
+    retry: false,
   })
 
   return (
@@ -28,9 +34,9 @@ export function MainLayout() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="truncate text-[15px] font-bold tracking-tight text-slate-900">{pageTitle(location.pathname)}</h1>
-                {data && <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 sm:inline-flex">
+                {(data || summary) && <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 sm:inline-flex">
                   <span className="h-2 w-2 animate-pulseSoft rounded-full bg-emerald-500" />
-                  Operational
+                  {summary?.live ? `${summary.live.onlineUsers} online` : 'Operational'}
                 </span>}
               </div>
               <p className="hidden text-xs font-medium text-slate-500 sm:block">{pageSubtitle(location.pathname)}</p>
@@ -41,10 +47,10 @@ export function MainLayout() {
             <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm sm:flex">
               <span className="h-2 w-2 rounded-full bg-primary-500 animate-pulseSoft" />
               <span className="font-mono text-xs font-medium text-slate-600">
-                {data?.nodeId ? `${data.nodeId.slice(0, 6)}…` : 'node —'}
+                {(summary?.node.nodeId ?? data?.nodeId) ? `${(summary?.node.nodeId ?? data!.nodeId).slice(0, 6)}…` : 'node —'}
               </span>
               <span className="h-3 w-px bg-slate-200" />
-              <span className="text-xs text-slate-500">{data ? `${data.uptimeSec ? Math.floor(data.uptimeSec / 3600) : 0}h up` : '—'}</span>
+              <span className="text-xs text-slate-500">{(summary?.node.uptimeSec ?? data?.uptimeSec) ? `${Math.floor((summary?.node.uptimeSec ?? data!.uptimeSec) / 3600)}h up` : '—'}</span>
             </div>
 
             <Link to="/configs" className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 sm:inline-flex">

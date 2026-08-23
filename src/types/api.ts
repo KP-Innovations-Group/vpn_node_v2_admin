@@ -116,6 +116,109 @@ export interface HealthHeartBeatResponse {
   totalTrafficUsed: number
 }
 
+export interface HealthDetailsResponse extends HealthHeartBeatResponse {
+  system: {
+    ramTotalBytes: number
+    diskUsedPercent: number
+    diskTotalBytes: number
+    load1: number
+    goroutines: number
+    goVersion: string
+  }
+  xray: {
+    version: string
+    uptimeSec: number
+    inbounds: Array<{ tag: string; protocol: string; listen: string }>
+  }
+}
+
+// stats/summary — GET /api/v1/stats/summary (internal/dto/stats.go:6)
+export interface StatsSummaryResponse {
+  node: {
+    nodeId: string
+    version: string
+    xrayVersion: string
+    startedAt: string
+    uptimeSec: number
+  }
+  system: {
+    cpuPercent: number
+    ramPercent: number
+    ramTotalBytes: number
+    diskUsedPercent: number
+    diskTotalBytes: number
+    load1: number
+    goroutines: number
+  }
+  traffic: {
+    last24hBytes: number
+    last7dBytes: number
+    todayBytes: number
+  }
+  fleet: {
+    totalConfigs: number
+    active: number
+    disabled: number
+    deleted: number
+    expired: number
+    expiringIn7d: number
+    byType: Record<string, number>
+    quotaUsedBytes: number
+    quotaLimitBytes: number
+    avgQuotaUsedPct: number
+  }
+  subscriptions: {
+    count: number
+    totalAttachedConfigs: number
+  }
+  live: {
+    onlineUsers: number
+    activeConnections: number
+  }
+}
+
+export interface TrafficPoint {
+  bucketStart: string
+  uploadBytes: number
+  downloadBytes: number
+  totalBytes: number
+}
+
+export interface TrafficHistoryResponse {
+  range: string
+  granularity: string
+  points: TrafficPoint[]
+  totalBytes: number
+}
+
+export interface TopConsumer {
+  uuid: string
+  email: string
+  configType: string
+  quotaUsedBytes: number
+  quotaLimitBytes: number
+  expireAt: string
+  isEnabled: boolean
+  recentTraffic?: number
+}
+
+export interface TopConsumersResponse {
+  consumers: TopConsumer[]
+}
+
+export interface ExpiringResponse {
+  configs: ConfigResponse[]
+  count: number
+}
+
+export interface XrayStatsResponse {
+  running: boolean
+  version: string
+  inbounds: Array<{ tag: string; protocol: string; listen: string }>
+  outbounds: number
+  activeUsers: number
+}
+
 export interface ErrorBody {
   code: number
   message: string

@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { health } from '@/lib/api-client'
+import { health, stats } from '@/lib/api-client'
 
 interface NavItem {
   label: string
@@ -51,8 +51,17 @@ export function NavSidebar() {
     refetchInterval: 30_000,
     retry: false,
   })
+  const { data: summary } = useQuery({
+    queryKey: ['stats', 'summary'],
+    queryFn: () => stats.summary(),
+    refetchInterval: 30_000,
+    retry: false,
+  })
 
-  const isOk = data?.status === 'ok'
+  const isOk = (summary ? true : data?.status === 'ok')
+  const nodeId = summary?.node.nodeId ?? data?.nodeId
+  const cpu = summary?.system.cpuPercent ?? data?.cpuPercent
+  const ram = summary?.system.ramPercent ?? data?.ramPercent
 
   return (
     <aside className="hidden w-[272px] shrink-0 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl md:flex">
@@ -120,17 +129,22 @@ export function NavSidebar() {
             <p className="text-[11px] font-semibold tracking-widest text-slate-400">NODE</p>
             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">single</span>
           </div>
-          <p className="mt-2 truncate font-mono text-xs font-medium text-slate-700" title={data?.nodeId}>
-            {data?.nodeId ? `${data.nodeId.slice(0, 8)}…${data.nodeId.slice(-6)}` : '—'}
+          <p className="mt-2 truncate font-mono text-xs font-medium text-slate-700" title={nodeId}>
+            {nodeId ? `${nodeId.slice(0, 8)}…${nodeId.slice(-6)}` : '—'}
           </p>
           <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-500">
             <span className="inline-flex h-6 items-center rounded-full bg-white px-2.5 font-medium shadow-sm ring-1 ring-slate-200">
-              {data ? `${data.cpuPercent.toFixed(1)}% CPU` : '…'}
+              {cpu != null ? `${cpu.toFixed(1)}% CPU` : '…'}
             </span>
             <span className="inline-flex h-6 items-center rounded-full bg-white px-2.5 font-medium shadow-sm ring-1 ring-slate-200">
-              {data ? `${data.ramPercent.toFixed(1)}% RAM` : '…'}
+              {ram != null ? `${ram.toFixed(1)}% RAM` : '…'}
             </span>
           </div>
+          {summary?.live && (
+            <p className="mt-2 text-[11px] font-medium text-slate-500">
+              {summary.live.onlineUsers} online • {summary.live.activeConnections} conns
+            </p>
+          )}
         </div>
       </div>
 

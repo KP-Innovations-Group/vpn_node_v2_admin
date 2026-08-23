@@ -9,13 +9,19 @@ import type {
   ConfigResponseList,
   ConfigUUIDRequest,
   ErrorResponse,
+  ExpiringResponse,
+  HealthDetailsResponse,
   HealthHeartBeatResponse,
   PaginatedQuery,
+  StatsSummaryResponse,
   SubscriptionCreateRequest,
   SubscriptionResponse,
   SubscriptionResponseList,
   SubscriptionUpdateRequest,
   SubscriptionUUIDRequest,
+  TopConsumersResponse,
+  TrafficHistoryResponse,
+  XrayStatsResponse,
 } from '@/types/api'
 
 export const admin = {
@@ -108,6 +114,34 @@ export const health = {
       { rawPath: true },
     )
   },
+  details: (): Promise<HealthDetailsResponse> =>
+    apiFetch<HealthDetailsResponse>('/health/details', { rawPath: true }),
+}
+
+export const stats = {
+  summary: (): Promise<StatsSummaryResponse> => apiFetch<StatsSummaryResponse>('/stats/summary'),
+  traffic: (range: '24h' | '7d' | '30d' = '7d', granularity?: '10m' | '1h' | '1d'): Promise<TrafficHistoryResponse> => {
+    const params = new URLSearchParams()
+    params.set('range', range)
+    if (granularity) params.set('granularity', granularity)
+    const qs = params.toString()
+    return apiFetch<TrafficHistoryResponse>(`/stats/traffic${qs ? `?${qs}` : ''}`)
+  },
+  topConsumers: (opts?: { limit?: number; sort?: 'quotaUsed' | 'traffic'; range?: string }): Promise<TopConsumersResponse> => {
+    const params = new URLSearchParams()
+    if (opts?.limit) params.set('limit', String(opts.limit))
+    if (opts?.sort) params.set('sort', opts.sort)
+    if (opts?.range) params.set('range', opts.range)
+    const qs = params.toString()
+    return apiFetch<TopConsumersResponse>(`/stats/top-consumers${qs ? `?${qs}` : ''}`)
+  },
+  expiring: (within: '24h' | '7d' | '14d' | '30d' = '7d', limit = 20): Promise<ExpiringResponse> => {
+    const params = new URLSearchParams()
+    params.set('within', within)
+    params.set('limit', String(limit))
+    return apiFetch<ExpiringResponse>(`/stats/expiring?${params.toString()}`)
+  },
+  xray: (): Promise<XrayStatsResponse> => apiFetch<XrayStatsResponse>('/stats/xray'),
 }
 
 export { ApiError } from '@/lib/api'
