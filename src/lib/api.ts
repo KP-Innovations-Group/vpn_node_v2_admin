@@ -30,6 +30,7 @@ export class ApiError extends Error {
 
 export interface RequestOptions extends RequestInit {
   skipAuth?: boolean
+  rawPath?: boolean
 }
 
 // In dev the Vite proxy forwards /api to the local node, so a relative base
@@ -38,15 +39,18 @@ export interface RequestOptions extends RequestInit {
 const nodeOrigin = import.meta.env.VITE_API_ORIGIN || ''
 export const API_BASE: string =
   nodeOrigin && import.meta.env.MODE === 'production' ? `${nodeOrigin}/api/v1` : '/api/v1'
+const RAW_BASE: string = nodeOrigin && import.meta.env.MODE === 'production' ? nodeOrigin : ''
 
 export async function apiFetch<T>(
   input: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const url = input.startsWith('http') ? input : `${API_BASE}${input}`
-  const headers = new Headers(options.headers)
+  const { rawPath, skipAuth, ...fetchInit } = options
+  const base = rawPath ? RAW_BASE : API_BASE
+  const url = input.startsWith('http') ? input : `${base}${input}`
+  const headers = new Headers(fetchInit.headers as HeadersInit | undefined)
 
-  if (!options.skipAuth) {
+  if (!skipAuth) {
     const token = getBearerToken()
     if (token) {
       headers.set('Authorization', `Bearer ${token}`)
@@ -55,7 +59,7 @@ export async function apiFetch<T>(
 
   headers.set('Content-Type', 'application/json')
 
-  const response = await fetch(url, { ...options, headers })
+  const response = await fetch(url, { ...fetchInit, headers })
 
   if (!response.ok) {
     let body: ApiErrorBody | string

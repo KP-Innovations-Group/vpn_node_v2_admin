@@ -105,6 +105,7 @@ export const health = {
     const qs = params.toString()
     return apiFetch<HealthHeartBeatResponse>(
       `/health/heartbeat${qs ? `?${qs}` : ''}`,
+      { rawPath: true },
     )
   },
 }
