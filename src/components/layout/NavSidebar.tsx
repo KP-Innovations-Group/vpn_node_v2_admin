@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { health, stats } from '@/lib/api-client'
+import { ThemeToggle } from '@/lib/theme'
 
 interface NavItem {
   label: string
@@ -64,22 +65,25 @@ export function NavSidebar() {
   const ram = summary?.system.ramPercent ?? data?.ramPercent
 
   return (
-    <aside className="hidden w-[272px] shrink-0 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl md:flex">
+    <aside className="hidden w-[272px] shrink-0 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80 md:flex">
       {/* brand */}
-      <div className="flex h-[64px] items-center gap-3 border-b border-slate-200/70 px-5">
+      <div className="flex h-[64px] items-center gap-3 border-b border-slate-200/70 px-5 dark:border-slate-800">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-accent-600 shadow-glow text-white">
           <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
         <div className="min-w-0">
-          <div className="text-[13px] font-bold tracking-tight text-slate-900 leading-none">VPN NODE</div>
-          <div className="text-[11px] font-semibold tracking-widest text-primary-600">ADMIN • SINGLE</div>
+          <div className="text-[13px] font-bold tracking-tight text-slate-900 dark:text-white leading-none">VPN NODE</div>
+          <div className="text-[11px] font-semibold tracking-widest text-primary-600 dark:text-primary-400">ADMIN • SINGLE</div>
         </div>
-        <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-          <span className={`h-2 w-2 rounded-full ${isOk ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulseSoft' : 'bg-amber-500'}`} />
-          {isOk ? 'Live' : '—'}
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <span className={`h-2 w-2 rounded-full ${isOk ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulseSoft' : 'bg-amber-500'}`} />
+            {isOk ? 'Live' : '—'}
+          </span>
+          <ThemeToggle className="hidden lg:inline-flex" />
+        </div>
       </div>
 
       {/* nav */}
@@ -95,22 +99,22 @@ export function NavSidebar() {
                   className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
                     active
                       ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-glow'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                   }`}
                 >
                   <span
                     className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-                      active ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-slate-700'
+                      active ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-slate-700 dark:group-hover:text-slate-200'
                     }`}
                   >
                     {item.icon}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className={`block text-[13px] font-semibold leading-none ${active ? 'text-white' : 'text-slate-800'}`}>{item.label}</span>
-                    <span className={`block text-[11px] font-medium ${active ? 'text-white/70' : 'text-slate-400'}`}>{item.desc}</span>
+                    <span className={`block text-[13px] font-semibold leading-none ${active ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>{item.label}</span>
+                    <span className={`block text-[11px] font-medium ${active ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'}`}>{item.desc}</span>
                   </span>
                   <svg
-                    className={`h-4 w-4 shrink-0 transition ${active ? 'text-white/60' : 'text-slate-300 group-hover:text-slate-400'}`}
+                    className={`h-4 w-4 shrink-0 transition ${active ? 'text-white/60' : 'text-slate-300 group-hover:text-slate-400 dark:text-slate-600 dark:group-hover:text-slate-400'}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -124,47 +128,37 @@ export function NavSidebar() {
         </ul>
 
         {/* node mini card */}
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-soft">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 shadow-soft dark:border-slate-800 dark:from-slate-800 dark:to-slate-900">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold tracking-widest text-slate-400">NODE</p>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">single</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">single</span>
           </div>
-          <p className="mt-2 truncate font-mono text-xs font-medium text-slate-700" title={nodeId}>
+          <p className="mt-2 truncate font-mono text-xs font-medium text-slate-700 dark:text-slate-200" title={nodeId}>
             {nodeId ? `${nodeId.slice(0, 8)}…${nodeId.slice(-6)}` : '—'}
           </p>
-          <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-500">
-            <span className="inline-flex h-6 items-center rounded-full bg-white px-2.5 font-medium shadow-sm ring-1 ring-slate-200">
+          <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+            <span className="inline-flex h-6 items-center rounded-full bg-white px-2.5 font-medium shadow-sm ring-1 ring-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600">
               {cpu != null ? `${cpu.toFixed(1)}% CPU` : '…'}
             </span>
-            <span className="inline-flex h-6 items-center rounded-full bg-white px-2.5 font-medium shadow-sm ring-1 ring-slate-200">
+            <span className="inline-flex h-6 items-center rounded-full bg-white px-2.5 font-medium shadow-sm ring-1 ring-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600">
               {ram != null ? `${ram.toFixed(1)}% RAM` : '…'}
             </span>
           </div>
           {summary?.live && (
-            <p className="mt-2 text-[11px] font-medium text-slate-500">
+            <p className="mt-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
               {summary.live.onlineUsers} online • {summary.live.activeConnections} conns
             </p>
           )}
         </div>
       </div>
 
-      <div className="border-t border-slate-200/70 p-3">
-        <div className="rounded-xl bg-slate-900 px-3.5 py-3 text-white shadow-card">
-          <p className="text-xs font-semibold text-white">Single-node manager</p>
+      <div className="border-t border-slate-200/70 p-3 dark:border-slate-800">
+        <div className="rounded-xl bg-slate-900 px-3.5 py-3 text-white shadow-card dark:bg-black">
+          <p className="text-xs font-semibold text-white">Secure edge control</p>
           <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
-            VLESS + XHTTP • Quota • Connections gate
+            Fast access • Usage & quota • Simple workflow
           </p>
-          <a
-            href="/swagger"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary-300 hover:text-white"
-          >
-            Open API docs
-            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
+          <p className="mt-2 text-[11px] font-medium text-slate-400">Everything in one place</p>
         </div>
       </div>
     </aside>

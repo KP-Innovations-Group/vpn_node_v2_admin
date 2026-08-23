@@ -103,7 +103,7 @@ export function DashboardPage() {
               {status} • {lastUpdated}
             </span>
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-2.5 py-1 text-white">
-              Auto-refresh 30s • Bearer JWT
+              Auto-refresh
             </span>
             {summary?.node.version && (
               <span className="hidden sm:inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs">v{summary.node.version}</span>
@@ -212,10 +212,10 @@ export function DashboardPage() {
 
       {/* traffic sparkline + fleet */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft lg:col-span-8">
+        <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900 lg:col-span-8">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold tracking-tight text-slate-900">Fleet overview</h3>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+            <h3 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">Fleet overview</h3>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {subs ? `${subs.count} subs • ${subs.totalAttachedConfigs} attached` : '—'} • {fleet ? `${fleet.totalConfigs} configs` : '…'}
             </span>
           </div>
@@ -262,10 +262,10 @@ export function DashboardPage() {
                   <p className="text-xs font-semibold text-slate-900">Subscriptions →</p>
                   <p className="text-xs text-slate-500">{subs?.count ?? 0} bundles • {subs?.totalAttachedConfigs ?? 0} attached configs</p>
                 </Link>
-                <a href="/swagger" target="_blank" rel="noreferrer" className="rounded-2xl border border-primary-200 bg-primary-50 p-3 hover:bg-primary-100">
-                  <p className="text-xs font-semibold text-primary-900">API reference →</p>
-                  <p className="text-xs text-primary-700">stats/summary • traffic • xray</p>
-                </a>
+                <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-semibold text-slate-900">Overview</p>
+                  <p className="text-xs text-slate-500">{fleet.totalConfigs} configs • {subs?.count ?? 0} subscriptions</p>
+                </div>
               </div>
             </>
           )}
@@ -277,7 +277,7 @@ export function DashboardPage() {
             <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white">{traffic?.granularity ?? '—'}</span>
           </div>
           <p className="mt-1 text-xs font-medium text-slate-500">
-            {traffic ? `${formatBytes(traffic.totalBytes)} total • ${traffic.points.length} buckets` : 'Loading buckets from traffic_usage10m…'}
+            {traffic ? `${formatBytes(traffic.totalBytes)} total` : 'Loading usage…'}
           </p>
           <div className="mt-4 h-[96px] rounded-xl bg-slate-50 ring-1 ring-slate-200">
             {traffic?.points?.length ? <Sparkline points={traffic.points} /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No data</div>}
@@ -296,7 +296,7 @@ export function DashboardPage() {
               <p className="font-mono text-xs font-bold text-slate-900">{summary ? formatBytes(summary.traffic.last7dBytes) : '—'}</p>
             </div>
           </div>
-          <p className="mt-2 text-[11px] font-medium text-slate-400">Source: traffic_usage10m • group by {traffic?.granularity ?? '1h'} with COALESCE</p>
+          <p className="mt-2 text-[11px] font-medium text-slate-400">Updated every minute</p>
         </div>
       </div>
 
@@ -354,7 +354,7 @@ export function DashboardPage() {
             </ul>
           )}
           {fleet && fleet.expiringIn7d > (expiring?.configs.length ?? 0) && (
-            <p className="mt-2 text-center text-[11px] font-medium text-slate-500">+{fleet.expiringIn7d - (expiring?.configs.length ?? 0)} more — see stats/expiring?within=7d</p>
+            <p className="mt-2 text-center text-[11px] font-medium text-slate-500">+{fleet.expiringIn7d - (expiring?.configs.length ?? 0)} more expiring soon</p>
           )}
         </div>
       </div>
@@ -389,9 +389,9 @@ export function DashboardPage() {
 
       {!summary && !isLoading && (
         <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-6 text-center">
-          <p className="text-sm font-semibold text-amber-900">Stats unavailable — showing heartbeat fallback</p>
+          <p className="text-sm font-semibold text-amber-900">Stats unavailable</p>
           <p className="mx-auto mt-1 max-w-xl text-xs leading-relaxed text-amber-800">
-            <code className="rounded bg-white px-1 py-0.5 font-mono ring-1 ring-amber-200">GET /api/v1/stats/summary</code> requires <code className="rounded bg-white px-1 py-0.5 font-mono ring-1 ring-amber-200">Authorization: Bearer &lt;JWT&gt;</code> (NodeAuth). Ensure admin login succeeded.
+            Couldn’t load the latest stats. Please refresh or check your connection.
           </p>
         </div>
       )}
