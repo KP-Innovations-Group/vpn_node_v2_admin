@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { ConfigCreateRequest } from '@/types/api'
 
@@ -13,7 +13,6 @@ const ONE_GB = 1024 ** 3
 export function ConfigForm({ onSubmit, isLoading, defaultValues }: ConfigFormProps) {
   const [configType, setConfigType] = useState('vless')
   const [unlimited, setUnlimited] = useState((defaultValues?.connectionAllowed ?? 0) === 0)
-  const dateRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
@@ -104,32 +103,36 @@ export function ConfigForm({ onSubmit, isLoading, defaultValues }: ConfigFormPro
           <span className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">{quotaGB ? `${Math.round(Number(quotaGB) * ONE_GB).toLocaleString()} bytes` : ''}</span>
         </div>
         {/* @ts-ignore */ errors.quotaGB && <p className="mt-1 text-xs text-red-600">{(errors as Record<string, { message?: string }>).quotaGB?.message}</p>}
-        <p className="mt-1 text-xs text-slate-500">Enter like 1.2 GB — converted to bytes automatically.</p>
       </div>
 
       <div>
         <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Expiration *</label>
-        <div className="mt-2 flex gap-2">
-          <input
-            ref={dateRef}
-            type="datetime-local"
-            {...register('expirationTime' as never, { required: 'Expiration is required' })}
-            className="block flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-          />
-          <button type="button" onClick={() => dateRef.current?.blur()} className="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900">OK</button>
-        </div>
+        <input
+          type="datetime-local"
+          {...register('expirationTime' as never, { required: 'Expiration is required' })}
+          className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+        />
         {/* @ts-ignore */ errors.expirationTime && <p className="mt-1 text-xs text-red-600">{(errors.expirationTime as { message?: string })?.message}</p>}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Initial used (bytes, optional)</label>
-          <input
-            type="number"
-            {...register('initialQuotaUsedBytes' as never, { valueAsNumber: true })}
-            placeholder="0"
-            className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-          />
+          <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Initial used (GB, optional)</label>
+          <div className="relative">
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              placeholder="0"
+              defaultValue={defaultValues?.initialQuotaUsedBytes ? +(defaultValues.initialQuotaUsedBytes / ONE_GB).toFixed(2) : undefined}
+              onChange={(e) => {
+                const v = e.target.value === '' ? undefined : Math.round(Number(e.target.value) * ONE_GB)
+                setValue('initialQuotaUsedBytes' as never, v as never)
+              }}
+              className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 pr-12 text-sm font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+            <span className="pointer-events-none absolute inset-y-0 right-0 top-2 flex items-center pr-3 text-xs font-bold text-slate-500">GB</span>
+          </div>
         </div>
         <div>
           <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Concurrent connections</label>
@@ -143,7 +146,7 @@ export function ConfigForm({ onSubmit, isLoading, defaultValues }: ConfigFormPro
             </button>
             <button
               type="button"
-              onClick={() => setUnlimited(false)}
+              onClick={() => { setUnlimited(false); setValue('connectionAllowed' as never, 1 as never) }}
               className={`flex-1 rounded-xl border px-3 py-2.5 text-xs font-semibold ${!unlimited ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}
             >
               Limited
@@ -152,15 +155,15 @@ export function ConfigForm({ onSubmit, isLoading, defaultValues }: ConfigFormPro
           {!unlimited && (
             <input
               type="number"
-              min={1}
-              {...register('connectionAllowed' as never, { valueAsNumber: true, min: 1 })}
-              defaultValue={watch('connectionAllowed') || 2}
+              min={0}
+              {...register('connectionAllowed' as never, { valueAsNumber: true, min: 0 })}
+              defaultValue={watch('connectionAllowed') ?? 1}
               onChange={(e) => setValue('connectionAllowed' as never, Number(e.target.value) as never)}
               className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              placeholder="e.g. 2"
+              placeholder="1"
             />
           )}
-          <p className="mt-1 text-xs text-slate-500">{unlimited ? 'No limit on concurrent devices' : connVal ? `${connVal} devices` : ''}</p>
+          <p className="mt-1 text-xs text-slate-500">{unlimited ? 'No limit' : connVal != null ? `${connVal} devices (0 = unlimited)` : ''}</p>
         </div>
       </div>
 

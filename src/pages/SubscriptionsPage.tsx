@@ -64,10 +64,10 @@ export function SubscriptionsPage() {
           <select
             value={order}
             onChange={(e) => setOrder(e.target.value as 'asc' | 'desc')}
-            className="min-w-[130px] flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:flex-none"
+            className="min-w-[140px] flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:flex-none"
           >
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
+            <option value="desc">Newest first</option>
+            <option value="asc">Oldest first</option>
           </select>
           <button
             onClick={() => setCreateOpen(true)}

@@ -52,13 +52,13 @@ export function DataTable<T>({
   return (
     <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-soft dark:border-slate-700 dark:bg-slate-900">
       <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
-      <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+      <table className="min-w-full table-fixed divide-y divide-slate-200 dark:divide-slate-700">
         <thead className="bg-slate-50/80 backdrop-blur dark:bg-slate-800/80">
           <tr>
             {columns.map((col, i) => (
               <th
                 key={i}
-                className={`whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400 uppercase ${col.headerClassName ?? ''}`}
+                className={`whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400 uppercase min-w-[120px] ${col.headerClassName ?? ''}`}
               >
                 {col.header}
               </th>

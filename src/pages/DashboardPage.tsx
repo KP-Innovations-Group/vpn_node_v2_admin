@@ -87,7 +87,6 @@ export function DashboardPage() {
 
   const fleet = summary?.fleet
   const subs = summary?.subscriptions
-  const live = summary?.live
 
   const quotaPct = fleet && fleet.quotaLimitBytes > 0 ? Math.min(100, (fleet.quotaUsedBytes / fleet.quotaLimitBytes) * 100) : 0
 
@@ -105,9 +104,6 @@ export function DashboardPage() {
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-2.5 py-1 text-white">
               Auto-refresh
             </span>
-            {summary?.node.version && (
-              <span className="hidden sm:inline-flex rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs">v{summary.node.version}</span>
-            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -134,16 +130,14 @@ export function DashboardPage() {
               <div>
                 <p className="text-[11px] font-semibold tracking-widest text-white/60">SYSTEM STATUS</p>
                 <div className="mt-2 flex items-center gap-3">
-                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${isOk ? 'bg-emerald-500' : 'bg-amber-500'} shadow-lg`}>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 shadow-lg">
                     <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isOk ? 'M5 13l4 4L19 7' : 'M12 8v4m0 4h.01'} />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </span>
                   <div>
                     <p className="text-lg font-bold leading-none capitalize">{status}</p>
-                    <p className="text-xs font-medium text-white/70">
-                      {live ? `${live.onlineUsers} online • ${live.activeConnections} conns` : heartbeat ? `${heartbeat.currentUsers} online` : '—'}
-                    </p>
+                    <p className="text-xs font-medium text-white/70">Operational</p>
                   </div>
                 </div>
               </div>
@@ -403,20 +397,26 @@ function Detail({ label, value, sub }: { label: string; value: string; sub: stri
 }
 
 function FleetStat({ label, value, sub, tone }: { label: string; value: number | string; sub: string; tone: 'slate' | 'emerald' | 'amber' | 'rose' }) {
+  const iconMap: Record<string, React.ReactNode> = {
+    slate: <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2h5m6-8a4 4 0 100-8 4 4 0 000 8z" /></svg>,
+    emerald: <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>,
+    amber: <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    rose: <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  }
   const toneMap: Record<string, string> = {
-    slate: 'bg-slate-900 text-white',
+    slate: 'bg-slate-900 text-white dark:bg-slate-700',
     emerald: 'bg-emerald-600 text-white',
     amber: 'bg-amber-500 text-white',
     rose: 'bg-rose-600 text-white',
   }
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/50">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold tracking-widest text-slate-500">{label}</p>
-        <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${toneMap[tone]}`}>{String(value).length > 3 ? '•' : String(value).slice(0, 1)}</span>
+        <p className="text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400" title={label === 'Total' ? 'All non-deleted configs' : undefined}>{label}</p>
+        <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${toneMap[tone]}`}>{iconMap[tone]}</span>
       </div>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
-      <p className="text-xs font-medium text-slate-500">{sub}</p>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{value}</p>
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{sub}</p>
     </div>
   )
 }

@@ -46,13 +46,13 @@ export function MainLayout() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:flex">
-              <span className="h-2 w-2 rounded-full bg-primary-500 animate-pulseSoft" />
-              <span className="font-mono text-xs font-medium tracking-wide text-slate-700 dark:text-slate-300" title={summary?.node.nodeId ?? data?.nodeId ?? ''}>
-                {(summary?.node.nodeId ?? data?.nodeId) ? `${(summary?.node.nodeId ?? data!.nodeId).slice(0, 8)}` : 'node'}
+            <div className="hidden max-w-[220px] items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:flex">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-primary-500 animate-pulseSoft" />
+              <span className="truncate font-mono text-xs font-medium tracking-wide text-slate-700 dark:text-slate-300" title={summary?.node.nodeId ?? data?.nodeId ?? ''}>
+                {(summary?.node.nodeId ?? data?.nodeId) ?? 'node'}
               </span>
-              <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{(summary?.node.uptimeSec ?? data?.uptimeSec) ? `${Math.floor((summary?.node.uptimeSec ?? data!.uptimeSec) / 3600)}h up` : '—'}</span>
+              <span className="h-3 w-px shrink-0 bg-slate-200 dark:bg-slate-700" />
+              <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">{(summary?.node.uptimeSec ?? data?.uptimeSec) ? `${Math.floor((summary?.node.uptimeSec ?? data!.uptimeSec) / 3600)}h up` : '—'}</span>
             </div>
 
             <ThemeToggle />
@@ -129,8 +129,4 @@ function pageTitle(path: string): string {
   if (path.startsWith('/subscriptions')) return 'Subscriptions'
   if (path.startsWith('/dashboard')) return 'Dashboard'
   return 'VPN Node Admin'
-}
-
-function pageSubtitle(_path: string): string {
-  return ''
 }
