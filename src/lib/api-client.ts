@@ -12,6 +12,7 @@ import type {
   ExpiringResponse,
   HealthDetailsResponse,
   HealthHeartBeatResponse,
+  OnlineResponse,
   PaginatedQuery,
   StatsSummaryResponse,
   SubscriptionCreateRequest,
@@ -142,6 +143,15 @@ export const stats = {
     return apiFetch<ExpiringResponse>(`/stats/expiring?${params.toString()}`)
   },
   xray: (): Promise<XrayStatsResponse> => apiFetch<XrayStatsResponse>('/stats/xray'),
+  online: (params?: { includeIdle?: boolean; limit?: number; offset?: number; sort?: 'connected' | 'lastSeen' | 'email' }): Promise<OnlineResponse> => {
+    const qs = new URLSearchParams()
+    if (params?.includeIdle) qs.set('includeIdle', 'true')
+    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.offset) qs.set('offset', String(params.offset))
+    if (params?.sort) qs.set('sort', params.sort)
+    const s = qs.toString()
+    return apiFetch<OnlineResponse>(`/stats/online${s ? `?${s}` : ''}`)
+  },
 }
 
 export { ApiError } from '@/lib/api'

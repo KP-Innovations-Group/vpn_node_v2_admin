@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ApiError, health, stats } from '@/lib/api-client'
 import { useToast } from '@/lib/useToast'
-import { formatBytes } from '@/lib/utils'
+import { formatBytes, relativeTime } from '@/lib/utils'
 
 export function DashboardPage() {
   const toast = useToast()
@@ -54,6 +54,26 @@ export function DashboardPage() {
     queryKey: ['health', 'details'],
     queryFn: () => health.details(),
     refetchInterval: 30_000,
+  })
+
+  const [onlinePage, setOnlinePage] = useState(1)
+  const [onlineSort, setOnlineSort] = useState<'lastSeen' | 'connected' | 'email'>('lastSeen')
+  const [onlineIdle, setOnlineIdle] = useState(false)
+  const onlineLimit = 10
+  const {
+    data: online,
+    isLoading: onlineLoading,
+    isFetching: onlineFetching,
+  } = useQuery({
+    queryKey: ['stats', 'online', onlinePage, onlineSort, onlineIdle],
+    queryFn: () =>
+      stats.online({
+        limit: onlineLimit,
+        offset: (onlinePage - 1) * onlineLimit,
+        sort: onlineSort,
+        includeIdle: onlineIdle,
+      }),
+    refetchInterval: 15_000,
   })
 
   useEffect(() => {
@@ -194,6 +214,75 @@ export function DashboardPage() {
             isLoading={isLoading}
             sub={summary?.system.diskTotalBytes ? formatBytes(summary.system.diskTotalBytes) + ' total' : undefined}
           />
+        </div>
+      </div>
+
+      {/* who is online */}
+      <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">Who is online</h3>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800">
+              {online?.onlineCount ?? 0} online • {online?.total ?? 0} total
+            </span>
+            {onlineFetching && <span className="text-xs text-slate-400">updating…</span>}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+              <input type="checkbox" checked={onlineIdle} onChange={(e) => { setOnlineIdle(e.target.checked); setOnlinePage(1) }} className="rounded" /> include idle (5m)
+            </label>
+            <select value={onlineSort} onChange={(e) => { setOnlineSort(e.target.value as never); setOnlinePage(1) }} className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <option value="lastSeen">Last seen</option>
+              <option value="connected">Connections</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+            <table className="min-w-full table-fixed divide-y divide-slate-200 dark:divide-slate-800">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/80">
+                <tr>
+                  <th className="min-w-[36px] px-3 py-2 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">●</th>
+                  <th className="min-w-[160px] px-3 py-2 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">Email</th>
+                  <th className="min-w-[90px] px-3 py-2 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">Type</th>
+                  <th className="min-w-[70px] px-3 py-2 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">Conns</th>
+                  <th className="min-w-[110px] px-3 py-2 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">Last seen</th>
+                  <th className="min-w-[120px] px-3 py-2 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">IP</th>
+                  <th className="min-w-[140px] px-3 py-2 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400">Quota</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                {onlineLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}><td colSpan={7} className="px-3 py-3"><div className="h-4 animate-pulse rounded bg-slate-200 dark:bg-slate-700" /></td></tr>
+                  ))
+                ) : !online?.entries?.length ? (
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">No online users — no active connections</td></tr>
+                ) : (
+                  online.entries.map((e) => (
+                    <tr key={e.uuid} className={e.isOnline ? 'bg-emerald-50/40 dark:bg-emerald-950/20' : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'}>
+                      <td className="px-3 py-2.5"><span className={`inline-block h-2.5 w-2.5 rounded-full ${e.isOnline ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]' : 'bg-slate-300 dark:bg-slate-600'}`} title={e.isOnline ? 'online' : 'idle'} /></td>
+                      <td className="truncate px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-slate-100" title={e.email}><Link to={`/configs/${e.uuid}`} className="hover:text-primary-600 dark:hover:text-primary-400 hover:underline">{e.email}</Link></td>
+                      <td className="px-3 py-2.5"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${e.configType === 'vless-xhttp' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'}`}>{e.configType}</span></td>
+                      <td className="px-3 py-2.5 text-sm font-mono font-semibold text-slate-700 dark:text-slate-300">{e.activeConnections}</td>
+                      <td className="px-3 py-2.5 text-xs text-slate-600 dark:text-slate-400" title={e.lastSeen ?? ''}>{e.lastSeen ? relativeTime(e.lastSeen) : '—'}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-slate-600 dark:text-slate-400">{e.remoteIPs?.[0] ?? '—'}{e.remoteIPs && e.remoteIPs.length > 1 ? ` +${e.remoteIPs.length - 1}` : ''}</td>
+                      <td className="px-3 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-400">{formatBytes(e.quotaUsedBytes)} / {formatBytes(e.quotaLimitBytes)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-xs text-slate-500 dark:text-slate-400">Page {onlinePage} • {online?.total ?? 0} total • updated {online?.generatedAt ? relativeTime(online.generatedAt) : '—'} • poll 15s</span>
+          <div className="flex gap-1.5">
+            <button disabled={onlinePage <= 1} onClick={() => setOnlinePage((p) => Math.max(1, p - 1))} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">Prev</button>
+            <button disabled={!online || onlinePage * onlineLimit >= (online.total ?? 0)} onClick={() => setOnlinePage((p) => p + 1)} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">Next</button>
+          </div>
         </div>
       </div>
 

@@ -219,6 +219,26 @@ export interface XrayStatsResponse {
   activeUsers: number
 }
 
+export interface OnlineEntry {
+  uuid: string
+  email: string
+  configType: string
+  isEnabled: boolean
+  isOnline: boolean
+  activeConnections: number
+  lastSeen?: string
+  remoteIPs?: string[]
+  quotaUsedBytes: number
+  quotaLimitBytes: number
+}
+
+export interface OnlineResponse {
+  total: number
+  onlineCount: number
+  entries: OnlineEntry[]
+  generatedAt: string
+}
+
 export interface ErrorBody {
   code: number
   message: string
