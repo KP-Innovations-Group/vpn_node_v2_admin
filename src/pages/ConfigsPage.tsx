@@ -16,7 +16,6 @@ export function ConfigsPage() {
   const [page, setPage] = useState(1)
   const [order, setOrder] = useState<'asc' | 'desc'>('asc')
   const [createOpen, setCreateOpen] = useState(false)
-  const [xhttpMode, setXhttpMode] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -30,10 +29,19 @@ export function ConfigsPage() {
     queryFn: () => configs.list({ page, pageSize: PAGE_SIZE, order }),
   })
 
-  const handleCreate = async (data: ConfigCreateRequest) => {
+  const handleCreate = async (data: ConfigCreateRequest & { configType?: string }) => {
+    const type = (data as { configType?: string }).configType ?? 'vless'
+    const isXhttp = type === 'vless-xhttp'
+    const payload: ConfigCreateRequest = {
+      email: data.email,
+      quotaLimit: data.quotaLimit,
+      expirationTime: data.expirationTime,
+      initialQuotaUsedBytes: data.initialQuotaUsedBytes,
+      connectionAllowed: data.connectionAllowed,
+    }
     setIsCreating(true)
     try {
-      await configs.create(data, xhttpMode)
+      await configs.create(payload, isXhttp)
       toast.success('Config created successfully')
       setCreateOpen(false)
       queryClient.invalidateQueries({ queryKey: ['configs'] })
@@ -80,28 +88,16 @@ export function ConfigsPage() {
           <select
             value={order}
             onChange={(e) => setOrder(e.target.value as 'asc' | 'desc')}
-            className="min-w-[130px] flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:flex-none"
+            className="min-w-[140px] flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:flex-none"
           >
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
+            <option value="desc">Newest first</option>
+            <option value="asc">Oldest first</option>
           </select>
           <button
-            onClick={() => {
-              setXhttpMode(false)
-              setCreateOpen(true)
-            }}
-            className="flex-1 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:flex-none"
+            onClick={() => setCreateOpen(true)}
+            className="rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
           >
             Create Config
-          </button>
-          <button
-            onClick={() => {
-              setXhttpMode(true)
-              setCreateOpen(true)
-            }}
-            className="flex-1 rounded-xl border border-primary-600 bg-white px-4 py-2.5 text-sm font-semibold text-primary-700 hover:bg-primary-50 dark:border-primary-500 dark:bg-slate-900 dark:text-primary-300 sm:flex-none"
-          >
-            Create XHTTP
           </button>
         </div>
       </div>
@@ -237,7 +233,7 @@ export function ConfigsPage() {
       <Modal
         isOpen={createOpen}
         onClose={() => setCreateOpen(false)}
-        title={xhttpMode ? 'Create VLESS-XHTTP Config' : 'Create VLESS Config'}
+        title="Create Config"
       >
         <ConfigForm
           defaultValues={{ connectionAllowed: 0 }}

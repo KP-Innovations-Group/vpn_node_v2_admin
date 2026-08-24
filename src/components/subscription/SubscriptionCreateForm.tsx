@@ -1,17 +1,15 @@
+import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
+import { useQuery } from '@tanstack/react-query'
+import { configs } from '@/lib/api-client'
 import type { SubscriptionCreateRequest, ConfigResponse } from '@/types/api'
 
 interface SubscriptionFormProps {
-  existingConfigs: ConfigResponse[]
   onSubmit: (data: SubscriptionCreateRequest) => Promise<void>
   isLoading?: boolean
 }
 
-export function SubscriptionCreateForm({
-  existingConfigs,
-  onSubmit,
-  isLoading,
-}: SubscriptionFormProps) {
+export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionFormProps) {
   const {
     register,
     handleSubmit,
@@ -37,31 +35,31 @@ export function SubscriptionCreateForm({
   return (
     <form onSubmit={handleSubmit(handleValid)} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Title *</label>
+        <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Title *</label>
         <input
           type="text"
           {...register('title', { required: 'Title is required' })}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
         />
         {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title.message}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Description</label>
+        <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Description</label>
         <textarea
           {...register('description')}
-          rows={3}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          rows={2}
+          className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Subscription Base URL</label>
+        <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Subscription Base URL</label>
         <input
           type="url"
           placeholder="https://sub.example.com"
           {...register('subscriptionBaseURL')}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
         />
       </div>
 
@@ -69,65 +67,71 @@ export function SubscriptionCreateForm({
         control={control}
         name="configUUIDs"
         render={({ field }) => (
-          <ConfigMultiSelect
-            configs={existingConfigs}
-            selected={field.value ?? []}
-            onChange={field.onChange}
-          />
+          <PaginatedConfigSelect selected={field.value ?? []} onChange={field.onChange} />
         )}
       />
 
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-md bg-primary-600 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
+        className="w-full rounded-xl bg-primary-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-60"
       >
-        {isLoading ? 'Saving...' : 'Save'}
+        {isLoading ? 'Saving…' : 'Save'}
       </button>
     </form>
   )
 }
 
-function ConfigMultiSelect({
-  configs,
-  selected,
-  onChange,
-}: {
-  configs: ConfigResponse[]
-  selected: string[]
-  onChange: (values: string[]) => void
-}) {
+function PaginatedConfigSelect({ selected, onChange }: { selected: string[]; onChange: (v: string[]) => void }) {
+  const [page, setPage] = useState(1)
+  const pageSize = 20
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['configs', 'select', page],
+    queryFn: () => configs.list({ page, pageSize, order: 'desc' }),
+  })
+
+  const configsList: ConfigResponse[] = data?.configs ?? []
+  const total = data?.count ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
   const toggle = (uuid: string) => {
-    const next = selected.includes(uuid)
-      ? selected.filter((u) => u !== uuid)
-      : [...selected, uuid]
+    const next = selected.includes(uuid) ? selected.filter((u) => u !== uuid) : [...selected, uuid]
     onChange(next)
   }
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
-        Attach configs (optional)
-      </label>
-      <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2">
-        {configs.length === 0 ? (
-          <p className="text-xs text-gray-500">No configs available.</p>
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Attach configs (optional)</label>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{selected.length} selected • {total} total</span>
+      </div>
+      <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800/50">
+        {isLoading ? (
+          <div className="space-y-2 p-1">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-8 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700" />
+            ))}
+          </div>
+        ) : configsList.length === 0 ? (
+          <p className="p-2 text-xs text-slate-500">No configs available.</p>
         ) : (
-          configs.map((cfg) => (
-            <label
-              key={cfg.uuid}
-              className="flex items-center gap-2 rounded p-1 text-sm hover:bg-surface-50"
-            >
-              <input
-                type="checkbox"
-                checked={selected.includes(cfg.uuid)}
-                onChange={() => toggle(cfg.uuid)}
-              />
-              <span className="truncate">{cfg.email}</span>
-              <span className="text-xs text-gray-400">({cfg.configType})</span>
+          configsList.map((cfg) => (
+            <label key={cfg.uuid} className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-white dark:hover:bg-slate-700">
+              <input type="checkbox" checked={selected.includes(cfg.uuid)} onChange={() => toggle(cfg.uuid)} className="rounded" />
+              <span className="min-w-0 flex-1 truncate text-slate-900 dark:text-slate-100">{cfg.email}</span>
+              <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">{cfg.configType}</span>
             </label>
           ))
         )}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-slate-500 dark:text-slate-400">Page {page} / {totalPages} • Newest first</span>
+        <div className="flex gap-1.5">
+          <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">Prev</button>
+          <button type="button" disabled={page >= totalPages || isFetching} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            {isFetching ? 'Loading…' : 'Next'}
+          </button>
+        </div>
       </div>
     </div>
   )

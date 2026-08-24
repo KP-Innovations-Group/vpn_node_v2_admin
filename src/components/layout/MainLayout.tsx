@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/lib/auth-context'
 import { NavSidebar } from '@/components/layout/NavSidebar'
@@ -8,6 +9,7 @@ import { ThemeToggle } from '@/lib/theme'
 export function MainLayout() {
   const { logout } = useAuth()
   const location = useLocation()
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { data } = useQuery({
     queryKey: ['heartbeat'],
     queryFn: () => health.heartbeat(),
@@ -40,44 +42,53 @@ export function MainLayout() {
                   {summary?.live ? `${summary.live.onlineUsers} online` : 'Operational'}
                 </span>}
               </div>
-              <p className="hidden text-xs font-medium text-slate-500 dark:text-slate-400 sm:block">{pageSubtitle(location.pathname)}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:flex">
               <span className="h-2 w-2 rounded-full bg-primary-500 animate-pulseSoft" />
-              <span className="font-mono text-xs font-medium text-slate-600 dark:text-slate-300">
-                {(summary?.node.nodeId ?? data?.nodeId) ? `${(summary?.node.nodeId ?? data!.nodeId).slice(0, 6)}…` : 'node —'}
+              <span className="font-mono text-xs font-medium tracking-wide text-slate-700 dark:text-slate-300" title={summary?.node.nodeId ?? data?.nodeId ?? ''}>
+                {(summary?.node.nodeId ?? data?.nodeId) ? `${(summary?.node.nodeId ?? data!.nodeId).slice(0, 8)}` : 'node'}
               </span>
               <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" />
-              <span className="text-xs text-slate-500 dark:text-slate-400">{(summary?.node.uptimeSec ?? data?.uptimeSec) ? `${Math.floor((summary?.node.uptimeSec ?? data!.uptimeSec) / 3600)}h up` : '—'}</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{(summary?.node.uptimeSec ?? data?.uptimeSec) ? `${Math.floor((summary?.node.uptimeSec ?? data!.uptimeSec) / 3600)}h up` : '—'}</span>
             </div>
 
             <ThemeToggle />
 
-            <Link to="/configs" className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:inline-flex">
-              <svg className="h-4 w-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              New config
-            </Link>
-
             <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
-            <div className="flex items-center gap-2">
-              <div className="hidden text-right leading-tight sm:block">
-                <p className="text-xs font-semibold text-slate-900 dark:text-white">Administrator</p>
-                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Single node</p>
-              </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-slate-700 text-xs font-bold text-white shadow-sm">A</div>
+            <div className="relative flex items-center gap-2">
+              <button
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <div className="hidden text-right leading-tight sm:block">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white">Admin</p>
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Administrator</p>
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-slate-700 text-xs font-bold text-white shadow-sm">A</div>
+                <svg className={`h-3.5 w-3.5 text-slate-400 transition ${userMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {userMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
+                  <div className="absolute right-0 top-[44px] z-20 w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                    <div className="px-3 py-2">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-white">Admin</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Signed in</p>
+                    </div>
+                    <button
+                      onClick={() => { setUserMenuOpen(false); logout() }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-            <button
-              onClick={logout}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
-              </svg>
-              <span className="hidden sm:inline">Logout</span>
-            </button>
           </div>
         </header>
 
@@ -120,9 +131,6 @@ function pageTitle(path: string): string {
   return 'VPN Node Admin'
 }
 
-function pageSubtitle(path: string): string {
-  if (path.startsWith('/configs')) return 'VLESS & VLESS-XHTTP • Quota & connection gate'
-  if (path.startsWith('/subscriptions')) return 'Bundle configs into shareable subscription links'
-  if (path.startsWith('/dashboard')) return 'Single-node health, traffic & fleet at a glance'
-  return 'Single-node control plane'
+function pageSubtitle(_path: string): string {
+  return ''
 }

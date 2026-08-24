@@ -1,7 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { health, stats } from '@/lib/api-client'
-import { ThemeToggle } from '@/lib/theme'
 
 interface NavItem {
   label: string
@@ -68,22 +67,20 @@ export function NavSidebar() {
     <aside className="hidden w-[272px] shrink-0 flex-col border-r border-slate-200/70 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80 md:flex">
       {/* brand */}
       <div className="flex h-[64px] items-center gap-3 border-b border-slate-200/70 px-5 dark:border-slate-800">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-accent-600 shadow-glow text-white">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-sm ring-1 ring-slate-700">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.9} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l7 4v6c0 4.8-3.2 8.9-7 10.2C8.2 21.9 5 17.8 5 13V7l7-4z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
           </svg>
         </div>
         <div className="min-w-0">
           <div className="text-[13px] font-bold tracking-tight text-slate-900 dark:text-white leading-none">VPN NODE</div>
-          <div className="text-[11px] font-semibold tracking-widest text-primary-600 dark:text-primary-400">ADMIN • SINGLE</div>
+          <div className="text-[11px] font-medium tracking-wide text-slate-500 dark:text-slate-400">Console</div>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            <span className={`h-2 w-2 rounded-full ${isOk ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulseSoft' : 'bg-amber-500'}`} />
-            {isOk ? 'Live' : '—'}
-          </span>
-          <ThemeToggle className="hidden lg:inline-flex" />
-        </div>
+        <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          <span className={`h-2 w-2 rounded-full ${isOk ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulseSoft' : 'bg-amber-500'}`} />
+          {isOk ? 'Live' : '—'}
+        </span>
       </div>
 
       {/* nav */}
@@ -153,13 +150,7 @@ export function NavSidebar() {
       </div>
 
       <div className="border-t border-slate-200/70 p-3 dark:border-slate-800">
-        <div className="rounded-xl bg-slate-900 px-3.5 py-3 text-white shadow-card dark:bg-black">
-          <p className="text-xs font-semibold text-white">Secure edge control</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
-            Fast access • Usage & quota • Simple workflow
-          </p>
-          <p className="mt-2 text-[11px] font-medium text-slate-400">Everything in one place</p>
-        </div>
+        <p className="px-2 text-[11px] font-medium text-slate-400">© VPN Node</p>
       </div>
     </aside>
   )

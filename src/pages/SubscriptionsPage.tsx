@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ApiError, configs, subscriptions } from '@/lib/api-client'
+import { ApiError, subscriptions } from '@/lib/api-client'
 import { useToast } from '@/lib/useToast'
 import type { SubscriptionCreateRequest, SubscriptionResponse } from '@/types/api'
 import { DataTable } from '@/components/ui/DataTable'
@@ -29,13 +29,7 @@ export function SubscriptionsPage() {
     queryFn: () => subscriptions.list({ page, pageSize: PAGE_SIZE, order }),
   })
 
-  const { data: configListData } = useQuery({
-    queryKey: ['configs-all'],
-    queryFn: () => configs.list({ page: 1, pageSize: 50, order: 'asc' }),
-    staleTime: 5 * 60_000,
-  })
 
-  const existingConfigs = configListData?.configs ?? []
 
   const handleCreate = async (values: SubscriptionCreateRequest) => {
     setIsCreating(true)
@@ -149,7 +143,6 @@ export function SubscriptionsPage() {
 
       <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Create Subscription">
         <SubscriptionCreateForm
-          existingConfigs={existingConfigs}
           onSubmit={handleCreate}
           isLoading={isCreating}
         />
