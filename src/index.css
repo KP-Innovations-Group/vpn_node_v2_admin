@@ -135,6 +135,11 @@
   }
 }
 
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
 @layer utilities {
   .glass {
     @apply bg-white/70 backdrop-blur-xl border border-white/60 dark:bg-slate-900/70 dark:border-white/10;

@@ -95,12 +95,19 @@ export function ConfigForm({ onSubmit, isLoading, defaultValues }: ConfigFormPro
               min={0.1}
               // @ts-ignore
               {...register('quotaGB' as never, { required: 'Quota is required', valueAsNumber: true, validate: (v: number) => v > 0 || 'Must be > 0' })}
-              className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 pr-12 text-sm font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 pr-12 text-[16px] font-medium text-slate-900 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white md:py-2.5 md:text-sm"
               placeholder="1.2"
+              inputMode="decimal"
             />
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-bold text-slate-500">GB</span>
           </div>
           <span className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">{quotaGB ? `${Math.round(Number(quotaGB) * ONE_GB).toLocaleString()} bytes` : ''}</span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {[20, 50, 100, 200].map((v) => (
+            <button key={v} type="button" onClick={() => setValue('quotaGB' as never, v as never)} className={`min-h-[36px] rounded-full border px-3 text-xs font-semibold ${Number(quotaGB) === v ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>{v} GB</button>
+          ))}
+          <button type="button" onClick={() => setValue('quotaGB' as never, 1.2 as never)} className="min-h-[36px] rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">1.2 GB</button>
         </div>
         {/* @ts-ignore */ errors.quotaGB && <p className="mt-1 text-xs text-red-600">{(errors as Record<string, { message?: string }>).quotaGB?.message}</p>}
       </div>

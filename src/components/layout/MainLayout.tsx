@@ -92,32 +92,34 @@ export function MainLayout() {
           </div>
         </header>
 
-        {/* mobile nav */}
-        <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-2 py-2 dark:border-slate-800 dark:bg-slate-900 md:hidden">
-          <MobileNavLink to="/dashboard" label="Dashboard" />
-          <MobileNavLink to="/configs" label="Configs" />
-          <MobileNavLink to="/subscriptions" label="Subscriptions" />
-        </div>
-
-        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-7">
+        <main className="flex-1 overflow-auto p-4 pb-24 md:p-6 md:pb-6 lg:p-7">
           <div className="mx-auto max-w-[1400px]">
             <Outlet />
           </div>
         </main>
+
+        {/* bottom tab bar — thumb zone, 44pt targets, safe-area */}
+        <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-slate-200 bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 md:hidden">
+          <MobileTab to="/dashboard" label="Home" icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M21 12l-2-2m0 0v-1a2 2 0 00-2-2h-2V6a2 2 0 00-2-2H10a2 2 0 00-2 2v1H6a2 2 0 00-2 2v1l-2 2" /></svg>} />
+          <MobileTab to="/configs" label="Configs" icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14 3H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V8zM9 13h6M9 17h6" /></svg>} />
+          <MobileTab to="/subscriptions" label="Subs" icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2" /></svg>} />
+          <button onClick={() => setUserMenuOpen((v) => !v)} className="flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-1 text-slate-600 dark:text-slate-400">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white dark:bg-white dark:text-slate-900">A</span>
+            <span className="text-[11px] font-semibold">Me</span>
+          </button>
+        </nav>
       </div>
     </div>
   )
 }
 
-function MobileNavLink({ to, label }: { to: string; label: string }) {
+function MobileTab({ to, label, icon }: { to: string; label: string; icon: React.ReactNode }) {
   const loc = useLocation()
   const active = loc.pathname.startsWith(to)
   return (
-    <Link
-      to={to}
-      className={`flex-1 rounded-xl px-3 py-2 text-center text-xs font-semibold ${active ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}
-    >
-      {label}
+    <Link to={to} className={`flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-1 text-[11px] font-semibold ${active ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}>
+      {icon}
+      <span>{label}</span>
     </Link>
   )
 }

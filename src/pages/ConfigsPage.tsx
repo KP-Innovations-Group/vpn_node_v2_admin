@@ -108,118 +108,160 @@ export function ConfigsPage() {
         </p>
       )}
 
-      <DataTable
-        columns={[
-          {
-            header: 'Email',
-            accessor: 'email',
-            className: 'font-medium text-gray-800',
-          },
-          {
-            header: 'Type',
-            render: (r) => (
-              <span
-                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                  r.configType === 'vless-xhttp'
-                    ? 'bg-purple-100 text-purple-800'
-                    : 'bg-blue-100 text-blue-800'
-                }`}
-              >
-                {configTypeLabel(r.configType)}
-              </span>
-            ),
-          },
-          {
-            header: 'Quota',
-            render: (r) => {
-              const pct = r.quotaLimitBytes > 0 ? (r.quotaUsedBytes / r.quotaLimitBytes) * 100 : 0
-              return (
-                <div className="text-sm">
-                  <span>{formatBytes(r.quotaUsedBytes)} / {formatBytes(r.quotaLimitBytes)}</span>
-                  <div className="mt-1 h-1.5 w-24 rounded bg-gray-200">
-                    <div
-                      className={`h-1.5 rounded ${pct > 90 ? 'bg-red-500' : 'bg-primary-600'}`}
-                      style={{ width: `${Math.min(100, pct)}%` }}
-                    />
-                  </div>
-                </div>
-              )
+      <div className="hidden md:block">
+        <DataTable
+          columns={[
+            {
+              header: 'Email',
+              accessor: 'email',
+              className: 'font-medium text-slate-900 dark:text-white',
             },
-          },
-          {
-            header: 'Expires',
-            render: (r) => (
-              <span className={isExpired(r.expireAt) ? 'text-red-600' : 'text-gray-800'}>
-                {formatDate(r.expireAt)}
-              </span>
-            ),
-          },
-          {
-            header: 'Conn. Limit',
-            render: (r) => (r.connectionAllowed === 0 ? 'Unlimited' : String(r.connectionAllowed)),
-          },
-          {
-            header: 'Status',
-            render: (r) => (
-              <span
-                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                  r.isEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {r.isEnabled ? 'Active' : 'Disabled'}
-              </span>
-            ),
-          },
-          {
-            header: 'Creator',
-            accessor: 'creator',
-          },
-          {
-            header: '',
-            render: (r) => (
-              <div className="flex items-center gap-1">
-                <Link
-                  to={`/configs/${r.uuid}`}
-                  className="rounded-md p-1 text-sm text-gray-600 hover:bg-gray-100"
-                  title="View"
+            {
+              header: 'Type',
+              render: (r) => (
+                <span
+                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                    r.configType === 'vless-xhttp'
+                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'
+                  }`}
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </Link>
-                <button
-                  onClick={() => toggleEnabled(r)}
-                  className={`rounded-md p-1 text-sm hover:bg-gray-100 ${r.isEnabled ? 'text-amber-600' : 'text-green-600'}`}
-                  title={r.isEnabled ? 'Disable' : 'Enable'}
+                  {configTypeLabel(r.configType)}
+                </span>
+              ),
+            },
+            {
+              header: 'Quota',
+              render: (r) => {
+                const pct = r.quotaLimitBytes > 0 ? (r.quotaUsedBytes / r.quotaLimitBytes) * 100 : 0
+                return (
+                  <div className="text-sm">
+                    <span>{formatBytes(r.quotaUsedBytes)} / {formatBytes(r.quotaLimitBytes)}</span>
+                    <div className="mt-1 h-1.5 w-24 rounded bg-slate-200 dark:bg-slate-700">
+                      <div
+                        className={`h-1.5 rounded ${pct > 90 ? 'bg-red-500' : 'bg-primary-600'}`}
+                        style={{ width: `${Math.min(100, pct)}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              },
+            },
+            {
+              header: 'Expires',
+              render: (r) => (
+                <span className={isExpired(r.expireAt) ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}>
+                  {formatDate(r.expireAt)}
+                </span>
+              ),
+            },
+            {
+              header: 'Conn. Limit',
+              render: (r) => (r.connectionAllowed === 0 ? 'Unlimited' : String(r.connectionAllowed)),
+            },
+            {
+              header: 'Status',
+              render: (r) => (
+                <span
+                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                    r.isEnabled ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                  }`}
                 >
-                  {r.isEnabled ? (
+                  {r.isEnabled ? 'Active' : 'Disabled'}
+                </span>
+              ),
+            },
+            {
+              header: 'Creator',
+              accessor: 'creator',
+            },
+            {
+              header: '',
+              render: (r) => (
+                <div className="flex items-center gap-1">
+                  <Link
+                    to={`/configs/${r.uuid}`}
+                    className="rounded-md p-1 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                    title="View"
+                  >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                  ) : (
+                  </Link>
+                  <button
+                    onClick={() => toggleEnabled(r)}
+                    className={`rounded-md p-1 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${r.isEnabled ? 'text-amber-600' : 'text-green-600'}`}
+                    title={r.isEnabled ? 'Disable' : 'Enable'}
+                  >
+                    {r.isEnabled ? (
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => deleteConfig(r)}
+                    className="rounded-md p-1 text-sm text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    title="Delete"
+                  >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.975-1.858L5 7m5 5v5m4-5v5M4 7h16M4 7l1-3h14l1 3z" />
                     </svg>
-                  )}
-                </button>
-                <button
-                  onClick={() => deleteConfig(r)}
-                  className="rounded-md p-1 text-sm text-red-600 hover:bg-gray-100"
-                  title="Delete"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.975-1.858L5 7m5 5v5m4-5v5M4 7h16M4 7l1-3h14l1 3z" />
-                  </svg>
-                </button>
+                  </button>
+                </div>
+              ),
+            },
+          ]}
+          data={data?.configs}
+          isLoading={isLoading}
+          emptyMessage="No configs found"
+        />
+      </div>
+
+      {/* Mobile cards — thumb friendly */}
+      <div className="grid gap-3 md:hidden">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-700" />)
+        ) : !data?.configs?.length ? (
+          <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">No configs found</p>
+        ) : (
+          data.configs.map((r) => {
+            const pct = r.quotaLimitBytes > 0 ? (r.quotaUsedBytes / r.quotaLimitBytes) * 100 : 0
+            return (
+              <div key={r.uuid} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-700 dark:bg-slate-900">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{r.email}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${r.configType === 'vless-xhttp' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'}`}>{configTypeLabel(r.configType)}</span>
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${r.isEnabled ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>{r.isEnabled ? 'Active' : 'Disabled'}</span>
+                    </div>
+                  </div>
+                  <Link to={`/configs/${r.uuid}`} className="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">View</Link>
+                </div>
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400"><span>{formatBytes(r.quotaUsedBytes)} / {formatBytes(r.quotaLimitBytes)}</span><span>{pct.toFixed(0)}%</span></div>
+                  <div className="mt-1 h-2 rounded-full bg-slate-200 dark:bg-slate-700"><div className={`h-2 rounded-full ${pct > 90 ? 'bg-red-500' : 'bg-primary-600'}`} style={{ width: `${Math.min(100, pct)}%` }} /></div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-400">
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{isExpired(r.expireAt) ? 'Expired' : formatDate(r.expireAt)}</span>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{r.connectionAllowed === 0 ? 'Unlimited' : `${r.connectionAllowed} conns`}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <Link to={`/configs/${r.uuid}`} className="flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">View</Link>
+                  <button onClick={() => toggleEnabled(r)} className={`flex min-h-[44px] items-center justify-center rounded-xl border text-xs font-semibold ${r.isEnabled ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300' : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300'}`}>{r.isEnabled ? 'Disable' : 'Enable'}</button>
+                  <button onClick={() => deleteConfig(r)} className="flex min-h-[44px] items-center justify-center rounded-xl border border-red-200 bg-red-50 text-xs font-semibold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">Delete</button>
+                </div>
               </div>
-            ),
-          },
-        ]}
-        data={data?.configs}
-        isLoading={isLoading}
-        emptyMessage="No configs found"
-      />
+            )
+          })
+        )}
+      </div>
 
       {data && (
         <Pagination

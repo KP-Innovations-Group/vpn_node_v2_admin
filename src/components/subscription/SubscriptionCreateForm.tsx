@@ -19,7 +19,7 @@ export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionForm
     defaultValues: {
       title: '',
       description: '',
-      subscriptionBaseURL: '',
+      subscriptionBaseURL: 'https://sub.pixono.li:8443',
       configUUIDs: [],
     },
   })
@@ -54,13 +54,14 @@ export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionForm
       </div>
 
       <div>
-        <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Subscription Base URL</label>
+        <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Subscription Base URL <span className="font-normal text-slate-500">— suggested</span></label>
         <input
           type="url"
-          placeholder="https://sub.example.com"
+          placeholder="https://sub.pixono.li:8443"
           {...register('subscriptionBaseURL')}
           className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
         />
+        <p className="mt-1 text-xs text-slate-500">Recommendation: <span className="font-mono font-medium text-slate-700 dark:text-slate-300">https://sub.pixono.li:8443</span> — you can change it.</p>
       </div>
 
       <Controller
