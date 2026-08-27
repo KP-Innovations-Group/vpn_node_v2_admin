@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { admin } from '@/lib/api-client'
 import { useAuth } from '@/lib/auth-context'
@@ -43,6 +44,16 @@ export function ProfilePage() {
           )}
         </div>
       </div>
+
+      {displayRole === 'super_admin' && (
+        <Link to="/admins" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-soft hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
+          <div>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Admin management</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Create and manage admins</p>
+          </div>
+          <span className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">Open</span>
+        </Link>
+      )}
 
       <button onClick={logout} className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-red-700">
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
