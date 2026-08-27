@@ -121,6 +121,7 @@ export function ConfigDetailPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <DetailCard label="UUID" value={config.uuid} />
         <DetailCard label="Email" value={config.email} />
+        <DetailCard label="Remark" value={config.remark || '—'} />
         <DetailCard label="Type" value={config.configType === 'vless-xhttp' ? 'VLESS-XHTTP' : 'VLESS'} />
         <DetailCard label="Creator" value={config.creator} />
         <DetailCard

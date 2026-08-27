@@ -111,13 +111,21 @@ export function ConfigsPage() {
       <div className="hidden md:block">
         <DataTable
           columns={[
-            {
-              header: 'Email',
-              accessor: 'email',
-              className: 'font-medium text-slate-900 dark:text-white',
-            },
-            {
-              header: 'Type',
+          {
+            header: 'Email',
+            accessor: 'email',
+            className: 'font-medium text-slate-900 dark:text-white',
+          },
+          {
+            header: 'Remark',
+            render: (r) => (
+              <span className="max-w-[140px] truncate text-xs text-slate-600 dark:text-slate-400" title={r.remark ?? ''}>
+                {r.remark || '—'}
+              </span>
+            ),
+          },
+          {
+            header: 'Type',
               render: (r) => (
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${

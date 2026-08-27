@@ -1,4 +1,4 @@
-export type Creator = 'admin' | 'brain'
+export type Creator = string // admin username, super_admin, brain, etc.
 
 export type ConfigType = 'vless' | 'vless-xhttp'
 
@@ -16,6 +16,7 @@ export interface ConfigResponse {
   createdAt: string
   updatedAt: string
   connectionAllowed: number
+  remark?: string
 }
 
 export interface ConfigResponseList {
@@ -29,6 +30,7 @@ export interface ConfigCreateRequest {
   expirationTime: string
   initialQuotaUsedBytes?: number
   connectionAllowed?: number
+  remark?: string
 }
 
 export interface ConfigUUIDRequest {
@@ -79,6 +81,14 @@ export interface SubscriptionCreateRequest {
   description: string
   configUUIDs: string[]
   subscriptionBaseURL: string
+  newConfigs?: Array<{
+    email: string
+    quotaLimit: number
+    expirationTime: string
+    connectionAllowed?: number
+    remark?: string
+    configType: ConfigType
+  }>
 }
 
 export interface SubscriptionUpdateRequest {
@@ -104,6 +114,27 @@ export interface AdminLoginResponse {
   tokenType: 'Bearer'
   expiresAt: string
   expiresIn: number
+  role: string
+  username: string
+}
+
+export interface AdminInfo {
+  username: string
+  role: string
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminListResponse {
+  admins: AdminInfo[]
+  count: number
+}
+
+export interface AdminCreateRequest {
+  username: string
+  password: string
+  role?: 'admin' | 'super_admin'
 }
 
 export interface HealthHeartBeatResponse {
@@ -200,6 +231,7 @@ export interface TopConsumer {
   expireAt: string
   isEnabled: boolean
   recentTraffic?: number
+  remark?: string
 }
 
 export interface TopConsumersResponse {
@@ -230,6 +262,7 @@ export interface OnlineEntry {
   remoteIPs?: string[]
   quotaUsedBytes: number
   quotaLimitBytes: number
+  remark?: string
 }
 
 export interface OnlineResponse {

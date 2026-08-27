@@ -28,6 +28,12 @@ import type {
 export const admin = {
   login: (req: AdminLoginRequest): Promise<AdminLoginResponse> =>
     apiFetch<AdminLoginResponse>('/admin/login', { method: 'POST', body: JSON.stringify(req) }),
+  create: (req: import('@/types/api').AdminCreateRequest): Promise<import('@/types/api').AdminInfo> =>
+    apiFetch<import('@/types/api').AdminInfo>('/admin/create', { method: 'POST', body: JSON.stringify(req) }),
+  list: (): Promise<import('@/types/api').AdminListResponse> => apiFetch<import('@/types/api').AdminListResponse>('/admin/list'),
+  me: (): Promise<import('@/types/api').AdminInfo> => apiFetch<import('@/types/api').AdminInfo>('/admin/me'),
+  delete: (username: string): Promise<void> =>
+    apiFetch<void>('/admin/delete', { method: 'DELETE', body: JSON.stringify({ username }) }),
 }
 
 export const configs = {

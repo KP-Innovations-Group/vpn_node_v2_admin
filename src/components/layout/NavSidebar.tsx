@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { health, stats } from '@/lib/api-client'
+import { useAuth } from '@/lib/auth-context'
 
 interface NavItem {
   label: string
@@ -45,6 +46,7 @@ const items: NavItem[] = [
 
 export function NavSidebar() {
   const { pathname } = useLocation()
+  const { role } = useAuth()
   const { data } = useQuery({
     queryKey: ['heartbeat'],
     queryFn: () => health.heartbeat(),
@@ -122,6 +124,21 @@ export function NavSidebar() {
               </li>
             )
           })}
+          {role === 'super_admin' && (
+            <li>
+              <NavLink
+                to="/admins"
+                className={({ isActive }) =>
+                  `group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${isActive ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-glow' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'}`
+                }
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 group-hover:bg-white dark:bg-slate-800 dark:text-slate-400">
+                  <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 11a4 4 0 100-8 4 4 0 000 8zM6 19a6 6 0 0112 0v1H6v-1zM16 8l4 3-4 3M20 11H14" /></svg>
+                </span>
+                <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold leading-none">Admins</span><span className="block text-[11px] font-medium text-slate-400">manage team</span></span>
+              </NavLink>
+            </li>
+          )}
         </ul>
 
         {/* node mini card */}

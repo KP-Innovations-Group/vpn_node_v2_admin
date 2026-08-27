@@ -44,6 +44,7 @@ export function ConfigForm({ onSubmit, isLoading, defaultValues }: ConfigFormPro
       expirationTime: data.expirationTime ? new Date(String(data.expirationTime)).toISOString() : '',
       connectionAllowed: unlimited ? 0 : Number(data.connectionAllowed ?? 0),
       initialQuotaUsedBytes: data.initialQuotaUsedBytes ? Number(data.initialQuotaUsedBytes) : undefined,
+      remark: (data as { remark?: string }).remark?.trim() || undefined,
       configType,
     } as ConfigCreateRequest & { configType: string }
     await onSubmit(payload)
@@ -117,9 +118,43 @@ export function ConfigForm({ onSubmit, isLoading, defaultValues }: ConfigFormPro
         <input
           type="datetime-local"
           {...register('expirationTime' as never, { required: 'Expiration is required' })}
-          className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-[16px] font-medium text-slate-900 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white md:py-2.5 md:text-sm"
         />
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {[
+            { label: '1 month', months: 1 },
+            { label: '2 months', months: 2 },
+            { label: '3 months', months: 3 },
+            { label: '6 months', months: 6 },
+            { label: '1 year', months: 12 },
+          ].map((o) => (
+            <button
+              key={o.label}
+              type="button"
+              onClick={() => {
+                const d = new Date()
+                d.setMonth(d.getMonth() + o.months)
+                const pad = (n: number) => String(n).padStart(2, '0')
+                const v = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                setValue('expirationTime' as never, v as never)
+              }}
+              className="min-h-[32px] rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
         {/* @ts-ignore */ errors.expirationTime && <p className="mt-1 text-xs text-red-600">{(errors.expirationTime as { message?: string })?.message}</p>}
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300">Remark <span className="font-normal text-slate-500">(optional)</span></label>
+        <input
+          type="text"
+          placeholder="client note / Ali VIP"
+          {...register('remark' as never)}
+          className="mt-2 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-[16px] font-medium text-slate-900 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white md:py-2.5 md:text-sm"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

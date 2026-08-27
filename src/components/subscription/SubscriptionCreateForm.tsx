@@ -24,13 +24,30 @@ export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionForm
     },
   })
 
+  const [drafts, setDrafts] = useState<Array<{ email: string; quotaGB: number; expirationTime: string; configType: 'vless' | 'vless-xhttp'; remark: string; connectionAllowed: number }>>([])
+
   const handleValid = async (data: SubscriptionCreateRequest) => {
+    const newConfigs = drafts
+      .filter((d) => d.email.trim())
+      .map((d) => ({
+        email: d.email.trim(),
+        quotaLimit: Math.round(d.quotaGB * 1024 ** 3),
+        expirationTime: d.expirationTime ? new Date(d.expirationTime).toISOString() : new Date(Date.now() + 30 * 86400 * 1000).toISOString(),
+        configType: d.configType as 'vless' | 'vless-xhttp',
+        remark: d.remark || undefined,
+        connectionAllowed: d.connectionAllowed,
+      }))
     const payload: SubscriptionCreateRequest = {
       ...data,
       configUUIDs: data.configUUIDs ?? [],
+      newConfigs: newConfigs.length ? newConfigs : undefined,
     }
     await onSubmit(payload)
   }
+
+  const addDraft = () => setDrafts((d) => [...d, { email: '', quotaGB: 50, expirationTime: '', configType: 'vless', remark: '', connectionAllowed: 0 }])
+  const updateDraft = (i: number, patch: Partial<(typeof drafts)[number]>) => setDrafts((d) => d.map((x, idx) => (idx === i ? { ...x, ...patch } : x)))
+  const removeDraft = (i: number) => setDrafts((d) => d.filter((_, idx) => idx !== i))
 
   return (
     <form onSubmit={handleSubmit(handleValid)} className="space-y-4">
@@ -71,6 +88,56 @@ export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionForm
           <PaginatedConfigSelect selected={field.value ?? []} onChange={field.onChange} />
         )}
       />
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/30">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Create new configs inline</p>
+          <button type="button" onClick={addDraft} className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">+ Add</button>
+        </div>
+        {drafts.length === 0 ? (
+          <p className="mt-2 text-xs text-slate-500">No new configs — they’ll be created and attached together with the subscription.</p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {drafts.map((d, i) => (
+              <div key={i} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Config #{i + 1}</span>
+                  <button type="button" onClick={() => removeDraft(i)} className="text-xs font-semibold text-red-600 dark:text-red-400">Remove</button>
+                </div>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <input placeholder="email" value={d.email} onChange={(e) => updateDraft(i, { email: e.target.value })} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                  <select value={d.configType} onChange={(e) => updateDraft(i, { configType: e.target.value as never })} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                    <option value="vless">VLESS</option>
+                    <option value="vless-xhttp">VLESS-XHTTP</option>
+                  </select>
+                  <div className="flex gap-1.5">
+                    <input type="number" step="0.1" value={d.quotaGB} onChange={(e) => updateDraft(i, { quotaGB: Number(e.target.value) })} className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" placeholder="GB" />
+                    <span className="self-center text-xs font-bold text-slate-500">GB</span>
+                  </div>
+                  <input type="datetime-local" value={d.expirationTime} onChange={(e) => updateDraft(i, { expirationTime: e.target.value })} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                  <input placeholder="remark" value={d.remark} onChange={(e) => updateDraft(i, { remark: e.target.value })} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                  <select value={d.connectionAllowed} onChange={(e) => updateDraft(i, { connectionAllowed: Number(e.target.value) })} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+                    <option value={0}>Unlimited</option>
+                    <option value={1}>1 conn</option>
+                    <option value={2}>2 conns</option>
+                    <option value={5}>5 conns</option>
+                  </select>
+                </div>
+                <div className="mt-2 flex gap-1.5">
+                  {[
+                    { label: '1M', m: 1 },
+                    { label: '3M', m: 3 },
+                    { label: '6M', m: 6 },
+                    { label: '1Y', m: 12 },
+                  ].map((o) => (
+                    <button key={o.label} type="button" onClick={() => { const dd = new Date(); dd.setMonth(dd.getMonth() + o.m); const pad = (n: number) => String(n).padStart(2, '0'); const v = `${dd.getFullYear()}-${pad(dd.getMonth() + 1)}-${pad(dd.getDate())}T${pad(dd.getHours())}:${pad(dd.getMinutes())}`; updateDraft(i, { expirationTime: v }) }} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{o.label}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <button
         type="submit"

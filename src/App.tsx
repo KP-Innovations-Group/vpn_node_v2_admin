@@ -7,6 +7,7 @@ import { ConfigsPage } from '@/pages/ConfigsPage'
 import { ConfigDetailPage } from '@/pages/ConfigDetailPage'
 import { SubscriptionsPage } from '@/pages/SubscriptionsPage'
 import { SubscriptionDetailPage } from '@/pages/SubscriptionDetailPage'
+import { AdminsPage } from '@/pages/AdminsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="configs/:uuid" element={<ConfigDetailPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
         <Route path="subscriptions/:uuid" element={<SubscriptionDetailPage />} />
+        <Route path="admins" element={<AdminsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
