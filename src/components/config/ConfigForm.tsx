@@ -108,7 +108,6 @@ export function ConfigForm({ onSubmit, isLoading, defaultValues }: ConfigFormPro
           {[20, 50, 100, 200].map((v) => (
             <button key={v} type="button" onClick={() => setValue('quotaGB' as never, v as never)} className={`min-h-[36px] rounded-full border px-3 text-xs font-semibold ${Number(quotaGB) === v ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>{v} GB</button>
           ))}
-          <button type="button" onClick={() => setValue('quotaGB' as never, 1.2 as never)} className="min-h-[36px] rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">1.2 GB</button>
         </div>
         {/* @ts-ignore */ errors.quotaGB && <p className="mt-1 text-xs text-red-600">{(errors as Record<string, { message?: string }>).quotaGB?.message}</p>}
       </div>
