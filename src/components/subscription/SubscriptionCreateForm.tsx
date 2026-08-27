@@ -24,7 +24,7 @@ export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionForm
     },
   })
 
-  const [drafts, setDrafts] = useState<Array<{ email: string; quotaGB: number; expirationTime: string; configType: 'vless' | 'vless-xhttp'; remark: string; connectionAllowed: number }>>([])
+  const [drafts, setDrafts] = useState<Array<{ email: string; quotaGB: number; expirationTime: string; configType: 'vless' | 'vless-xhttp'; remark: string; connectionAllowed: number; initialUsedGB: number | '' }>>([])
 
   const handleValid = async (data: SubscriptionCreateRequest) => {
     const newConfigs = drafts
@@ -36,16 +36,17 @@ export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionForm
         configType: d.configType as 'vless' | 'vless-xhttp',
         remark: d.remark || undefined,
         connectionAllowed: d.connectionAllowed,
+        initialQuotaUsedBytes: d.initialUsedGB === '' || d.initialUsedGB == null ? undefined : Math.round(Number(d.initialUsedGB) * 1024 ** 3),
       }))
     const payload: SubscriptionCreateRequest = {
       ...data,
       configUUIDs: data.configUUIDs ?? [],
-      newConfigs: newConfigs.length ? newConfigs : undefined,
+      newConfigs: newConfigs.length ? (newConfigs as never) : undefined,
     }
     await onSubmit(payload)
   }
 
-  const addDraft = () => setDrafts((d) => [...d, { email: '', quotaGB: 50, expirationTime: '', configType: 'vless', remark: '', connectionAllowed: 0 }])
+  const addDraft = () => setDrafts((d) => [...d, { email: '', quotaGB: 50, expirationTime: '', configType: 'vless', remark: '', connectionAllowed: 0, initialUsedGB: '' }])
   const updateDraft = (i: number, patch: Partial<(typeof drafts)[number]>) => setDrafts((d) => d.map((x, idx) => (idx === i ? { ...x, ...patch } : x)))
   const removeDraft = (i: number) => setDrafts((d) => d.filter((_, idx) => idx !== i))
 
@@ -81,18 +82,10 @@ export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionForm
         <p className="mt-1 text-xs text-slate-500">Recommendation: <span className="font-mono font-medium text-slate-700 dark:text-slate-300">https://sub.pixono.li:8443</span> — you can change it.</p>
       </div>
 
-      <Controller
-        control={control}
-        name="configUUIDs"
-        render={({ field }) => (
-          <PaginatedConfigSelect selected={field.value ?? []} onChange={field.onChange} />
-        )}
-      />
-
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/30">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Create new configs inline</p>
-          <button type="button" onClick={addDraft} className="rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">+ Add</button>
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Create new configs inline <span className="font-normal text-slate-500">— same as Create Config</span></p>
+          <button type="button" onClick={addDraft} className="min-h-[36px] rounded-lg bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">+ Add</button>
         </div>
         {drafts.length === 0 ? (
           <p className="mt-2 text-xs text-slate-500">No new configs — they’ll be created and attached together with the subscription.</p>
@@ -102,42 +95,64 @@ export function SubscriptionCreateForm({ onSubmit, isLoading }: SubscriptionForm
               <div key={i} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Config #{i + 1}</span>
-                  <button type="button" onClick={() => removeDraft(i)} className="text-xs font-semibold text-red-600 dark:text-red-400">Remove</button>
+                  <button type="button" onClick={() => removeDraft(i)} className="min-h-[32px] rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">Remove</button>
                 </div>
-                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <input placeholder="email" value={d.email} onChange={(e) => updateDraft(i, { email: e.target.value })} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
-                  <select value={d.configType} onChange={(e) => updateDraft(i, { configType: e.target.value as never })} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
-                    <option value="vless">VLESS</option>
-                    <option value="vless-xhttp">VLESS-XHTTP</option>
-                  </select>
-                  <div className="flex gap-1.5">
-                    <input type="number" step="0.1" value={d.quotaGB} onChange={(e) => updateDraft(i, { quotaGB: Number(e.target.value) })} className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" placeholder="GB" />
-                    <span className="self-center text-xs font-bold text-slate-500">GB</span>
+                <div className="mt-3 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => updateDraft(i, { configType: 'vless' })} className={`rounded-xl border px-3 py-2.5 text-xs font-semibold ${d.configType === 'vless' ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>VLESS</button>
+                    <button type="button" onClick={() => updateDraft(i, { configType: 'vless-xhttp' })} className={`rounded-xl border px-3 py-2.5 text-xs font-semibold ${d.configType === 'vless-xhttp' ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>VLESS-XHTTP</button>
                   </div>
-                  <input type="datetime-local" value={d.expirationTime} onChange={(e) => updateDraft(i, { expirationTime: e.target.value })} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
-                  <input placeholder="remark" value={d.remark} onChange={(e) => updateDraft(i, { remark: e.target.value })} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
-                  <select value={d.connectionAllowed} onChange={(e) => updateDraft(i, { connectionAllowed: Number(e.target.value) })} className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white">
-                    <option value={0}>Unlimited</option>
-                    <option value={1}>1 conn</option>
-                    <option value={2}>2 conns</option>
-                    <option value={5}>5 conns</option>
-                  </select>
-                </div>
-                <div className="mt-2 flex gap-1.5">
-                  {[
-                    { label: '1M', m: 1 },
-                    { label: '3M', m: 3 },
-                    { label: '6M', m: 6 },
-                    { label: '1Y', m: 12 },
-                  ].map((o) => (
-                    <button key={o.label} type="button" onClick={() => { const dd = new Date(); dd.setMonth(dd.getMonth() + o.m); const pad = (n: number) => String(n).padStart(2, '0'); const v = `${dd.getFullYear()}-${pad(dd.getMonth() + 1)}-${pad(dd.getDate())}T${pad(dd.getHours())}:${pad(dd.getMinutes())}`; updateDraft(i, { expirationTime: v }) }} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{o.label}</button>
-                  ))}
+                  <input placeholder="email — user@example.com" value={d.email} onChange={(e) => updateDraft(i, { email: e.target.value })} className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-[16px] dark:border-slate-700 dark:bg-slate-800 dark:text-white md:text-sm" />
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input type="number" step="0.1" value={d.quotaGB} onChange={(e) => updateDraft(i, { quotaGB: Number(e.target.value) })} className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 pr-10 text-[16px] dark:border-slate-700 dark:bg-slate-800 dark:text-white md:py-2.5 md:text-sm" placeholder="1.2" inputMode="decimal" />
+                      <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-bold text-slate-500">GB</span>
+                    </div>
+                    <div className="hidden sm:flex gap-1.5">
+                      {[20, 50, 100].map((v) => (
+                        <button key={v} type="button" onClick={() => updateDraft(i, { quotaGB: v })} className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${d.quotaGB === v ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>{v}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <input type="datetime-local" value={d.expirationTime} onChange={(e) => updateDraft(i, { expirationTime: e.target.value })} className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-[16px] dark:border-slate-700 dark:bg-slate-800 dark:text-white md:py-2.5 md:text-sm" />
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: '1M', m: 1 },
+                      { label: '2M', m: 2 },
+                      { label: '3M', m: 3 },
+                      { label: '6M', m: 6 },
+                      { label: '1Y', m: 12 },
+                    ].map((o) => (
+                      <button key={o.label} type="button" onClick={() => { const dd = new Date(); dd.setMonth(dd.getMonth() + o.m); const pad = (n: number) => String(n).padStart(2, '0'); const v = `${dd.getFullYear()}-${pad(dd.getMonth() + 1)}-${pad(dd.getDate())}T${pad(dd.getHours())}:${pad(dd.getMinutes())}`; updateDraft(i, { expirationTime: v }) }} className="rounded-full border border-slate-200 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{o.label}</button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative">
+                      <input type="number" step="0.1" placeholder="Initial GB" value={d.initialUsedGB} onChange={(e) => updateDraft(i, { initialUsedGB: e.target.value === '' ? '' : Number(e.target.value) })} className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 pr-8 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" inputMode="decimal" />
+                      <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-xs font-bold text-slate-500">GB</span>
+                    </div>
+                    <input placeholder="remark" value={d.remark} onChange={(e) => updateDraft(i, { remark: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => updateDraft(i, { connectionAllowed: 0 })} className={`flex-1 rounded-xl border px-3 py-2.5 text-xs font-semibold ${d.connectionAllowed === 0 ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>Unlimited</button>
+                    <div className="flex flex-1 items-center gap-1">
+                      <input type="number" min={0} value={d.connectionAllowed === 0 ? 1 : d.connectionAllowed} onChange={(e) => updateDraft(i, { connectionAllowed: Number(e.target.value) })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <Controller
+        control={control}
+        name="configUUIDs"
+        render={({ field }) => (
+          <PaginatedConfigSelect selected={field.value ?? []} onChange={field.onChange} />
+        )}
+      />
 
       <button
         type="submit"

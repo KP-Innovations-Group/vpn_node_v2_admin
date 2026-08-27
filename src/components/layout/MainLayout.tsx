@@ -103,10 +103,10 @@ export function MainLayout() {
           <MobileTab to="/dashboard" label="Home" icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M21 12l-2-2m0 0v-1a2 2 0 00-2-2h-2V6a2 2 0 00-2-2H10a2 2 0 00-2 2v1H6a2 2 0 00-2 2v1l-2 2" /></svg>} />
           <MobileTab to="/configs" label="Configs" icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14 3H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V8zM9 13h6M9 17h6" /></svg>} />
           <MobileTab to="/subscriptions" label="Subs" icon={<svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2" /></svg>} />
-          <button onClick={() => setUserMenuOpen((v) => !v)} className="flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-1 text-slate-600 dark:text-slate-400">
+          <Link to="/profile" className={`flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-xl px-3 py-1 text-[11px] font-semibold ${location.pathname.startsWith('/profile') || location.pathname.startsWith('/admins') ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}>
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white dark:bg-white dark:text-slate-900">A</span>
-            <span className="text-[11px] font-semibold">Me</span>
-          </button>
+            <span>Me</span>
+          </Link>
         </nav>
       </div>
     </div>
