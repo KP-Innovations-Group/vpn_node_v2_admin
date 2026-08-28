@@ -116,6 +116,7 @@ export interface AdminLoginResponse {
   expiresIn: number
   role: string
   username: string
+  permissions: string[]
 }
 
 export interface AdminInfo {
@@ -124,6 +125,8 @@ export interface AdminInfo {
   createdBy: string
   createdAt: string
   updatedAt: string
+  permissions?: string[]
+  isActive?: boolean
 }
 
 export interface AdminListResponse {
@@ -135,6 +138,17 @@ export interface AdminCreateRequest {
   username: string
   password: string
   role?: 'admin' | 'super_admin'
+}
+
+export interface AdminUpdateRequest {
+  username: string
+  role?: 'admin' | 'super_admin'
+  isActive?: boolean
+  password?: string
+}
+
+export interface PermissionsResponse {
+  permissions: string[]
 }
 
 export interface HealthHeartBeatResponse {

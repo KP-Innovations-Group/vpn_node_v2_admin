@@ -22,7 +22,7 @@ export function ConfigsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const toast = useToast()
   const queryClient = useQueryClient()
-  const { role } = useAuth()
+  const { role, can } = useAuth()
 
   const {
     data,
@@ -106,12 +106,14 @@ export function ConfigsPage() {
             <option value="desc">Newest first</option>
             <option value="asc">Oldest first</option>
           </select>
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
-          >
-            Create Config
-          </button>
+          {can('config:write') && (
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
+            >
+              Create Config
+            </button>
+          )}
         </div>
       </div>
 

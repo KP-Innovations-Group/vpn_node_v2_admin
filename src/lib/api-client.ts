@@ -34,6 +34,14 @@ export const admin = {
   me: (): Promise<import('@/types/api').AdminInfo> => apiFetch<import('@/types/api').AdminInfo>('/admin/me'),
   delete: (username: string): Promise<void> =>
     apiFetch<void>('/admin/delete', { method: 'DELETE', body: JSON.stringify({ username }) }),
+  update: (req: import('@/types/api').AdminUpdateRequest): Promise<import('@/types/api').AdminInfo> =>
+    apiFetch<import('@/types/api').AdminInfo>('/admin/update', { method: 'PATCH', body: JSON.stringify(req) }),
+  permissions: (): Promise<import('@/types/api').PermissionsResponse> =>
+    apiFetch<import('@/types/api').PermissionsResponse>('/admin/permissions'),
+  getPermissions: (username: string): Promise<{ username: string; role: string; permissions: string[] }> =>
+    apiFetch<{ username: string; role: string; permissions: string[] }>(`/admin/${encodeURIComponent(username)}/permissions`),
+  setPermissions: (username: string, permissions: string[]): Promise<{ permissions: string[] }> =>
+    apiFetch<{ permissions: string[] }>(`/admin/${encodeURIComponent(username)}/permissions`, { method: 'PUT', body: JSON.stringify({ username, permissions }) }),
 }
 
 export const configs = {

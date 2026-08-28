@@ -10,11 +10,12 @@ interface NavItem {
   desc: string
 }
 
-const items: NavItem[] = [
+const items: (NavItem & { perm?: string })[] = [
   {
     label: 'Dashboard',
     to: '/dashboard',
     desc: 'Overview',
+    perm: 'stats:read',
     icon: (
       <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13h8V3H3v10zM13 21h8V11h-8v10zM13 3v6h8V3zM3 21h8v-6H3v6z" />
@@ -25,6 +26,7 @@ const items: NavItem[] = [
     label: 'Configs',
     to: '/configs',
     desc: 'VLESS keys',
+    perm: 'config:read',
     icon: (
       <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V9z" />
@@ -36,6 +38,7 @@ const items: NavItem[] = [
     label: 'Subscriptions',
     to: '/subscriptions',
     desc: 'Bundles',
+    perm: 'subscription:read',
     icon: (
       <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -46,7 +49,7 @@ const items: NavItem[] = [
 
 export function NavSidebar() {
   const { pathname } = useLocation()
-  const { role } = useAuth()
+  const { role, can } = useAuth()
   const { data } = useQuery({
     queryKey: ['heartbeat'],
     queryFn: () => health.heartbeat(),
@@ -89,7 +92,7 @@ export function NavSidebar() {
       <div className="flex-1 overflow-y-auto px-3 py-4">
         <p className="px-2 pb-2 text-[11px] font-semibold tracking-widest text-slate-400">NAVIGATION</p>
         <ul className="space-y-1">
-          {items.map((item) => {
+          {items.filter((i) => !i.perm || can(i.perm)).map((item) => {
             const active = pathname.startsWith(item.to)
             return (
               <li key={item.to}>
@@ -124,7 +127,7 @@ export function NavSidebar() {
               </li>
             )
           })}
-          {role === 'super_admin' && (
+          {(role === 'super_admin' || can('admin:read')) && (
             <li>
               <NavLink
                 to="/admins"

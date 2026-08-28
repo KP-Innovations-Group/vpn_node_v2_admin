@@ -9,6 +9,8 @@ interface AuthContextValue {
   token: string | null
   role: string | null
   username: string | null
+  permissions: string[]
+  can: (perm: string) => boolean
   login: (req: AdminLoginRequest) => Promise<void>
   logout: () => void
 }
@@ -25,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [role, setRole] = useState<string | null>(null)
   const [username, setUsername] = useState<string | null>(null)
+  const [permissions, setPermissions] = useState<string[]>([])
   const [isLoading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,15 +35,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(auth.isAuthenticated ? auth.token : null)
     setRole(auth.role ?? null)
     setUsername(auth.username ?? null)
+    setPermissions(auth.permissions ?? [])
     setLoading(false)
   }, [])
 
   const login = async (req: AdminLoginRequest) => {
     const resp = await admin.login(req)
-    setAuth({ token: resp.token, expiresAt: resp.expiresAt, expiresIn: resp.expiresIn, role: resp.role, username: resp.username })
+    setAuth({ token: resp.token, expiresAt: resp.expiresAt, expiresIn: resp.expiresIn, role: resp.role, username: resp.username, permissions: resp.permissions })
     setToken(resp.token)
     setRole(resp.role ?? null)
     setUsername(resp.username ?? null)
+    setPermissions(resp.permissions ?? [])
   }
 
   const logout = () => {
@@ -48,6 +53,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null)
     setRole(null)
     setUsername(null)
+    setPermissions([])
+  }
+
+  const can = (perm: string) => {
+    if (role === 'super_admin') return true
+    return permissions.includes(perm)
   }
 
   const value = useMemo(
@@ -57,10 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       role,
       username,
+      permissions,
+      can,
       login,
       logout,
     }),
-    [token, role, username, isLoading],
+    [token, role, username, permissions, isLoading],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
