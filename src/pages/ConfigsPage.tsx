@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ApiError, configs } from '@/lib/api-client'
+import { ApiError, configs, admin } from '@/lib/api-client'
 import { useToast } from '@/lib/useToast'
+import { useAuth } from '@/lib/auth-context'
 import type { ConfigCreateRequest, ConfigResponse } from '@/types/api'
 import { DataTable } from '@/components/ui/DataTable'
 import { Pagination } from '@/components/ui/Pagination'
@@ -14,19 +15,28 @@ const PAGE_SIZE = 10
 
 export function ConfigsPage() {
   const [page, setPage] = useState(1)
-  const [order, setOrder] = useState<'asc' | 'desc'>('asc')
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc')
+  const [status, setStatus] = useState<'all' | 'enabled' | 'disabled'>('all')
+  const [creatorFilter, setCreatorFilter] = useState<string>('')
   const [createOpen, setCreateOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const toast = useToast()
   const queryClient = useQueryClient()
+  const { role } = useAuth()
 
   const {
     data,
     error,
     isLoading,
   } = useQuery({
-    queryKey: ['configs', page, order],
-    queryFn: () => configs.list({ page, pageSize: PAGE_SIZE, order }),
+    queryKey: ['configs', page, order, status, creatorFilter],
+    queryFn: () => configs.list({ page, pageSize: PAGE_SIZE, order, status: status === 'all' ? undefined : status, creator: creatorFilter || undefined }),
+  })
+
+  const { data: adminList } = useQuery({
+    queryKey: ['admins', 'filter'],
+    queryFn: () => admin.list(),
+    enabled: role === 'super_admin',
   })
 
   const handleCreate = async (data: ConfigCreateRequest & { configType?: string }) => {
@@ -38,6 +48,7 @@ export function ConfigsPage() {
       expirationTime: data.expirationTime,
       initialQuotaUsedBytes: data.initialQuotaUsedBytes,
       connectionAllowed: data.connectionAllowed,
+      remark: data.remark,
     }
     setIsCreating(true)
     try {
@@ -63,7 +74,8 @@ export function ConfigsPage() {
       }
       queryClient.invalidateQueries({ queryKey: ['configs'] })
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Action failed', 'Error')
+      const msg = err instanceof ApiError ? ((err as unknown as { status: number }).status === 404 ? 'Not found or deleted' : err.message) : 'Action failed'
+      toast.error(msg, 'Error')
     }
   }
 
@@ -74,7 +86,8 @@ export function ConfigsPage() {
       toast.success('Config deleted')
       queryClient.invalidateQueries({ queryKey: ['configs'] })
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Failed to delete config', 'Error')
+      const msg = err instanceof ApiError ? ((err as unknown as { status: number }).status === 404 ? 'Already deleted' : err.message) : 'Failed to delete config'
+      toast.error(msg, 'Error')
     }
   }
 
@@ -102,9 +115,31 @@ export function ConfigsPage() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
+          {(['all', 'enabled', 'disabled'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => { setStatus(s); setPage(1) }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize ${status === s ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}
+            >
+              {s === 'all' ? 'All' : s}
+            </button>
+          ))}
+        </div>
+        {role === 'super_admin' && adminList?.admins?.length ? (
+          <select value={creatorFilter} onChange={(e) => { setCreatorFilter(e.target.value); setPage(1) }} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+            <option value="">All creators</option>
+            {adminList.admins.map((a) => (
+              <option key={a.username} value={a.username}>{a.username} ({a.role})</option>
+            ))}
+          </select>
+        ) : null}
+      </div>
+
       {error && (
         <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
-          {error instanceof ApiError ? error.message : 'Failed to load configs'}
+          {error instanceof ApiError ? (error as unknown as { status?: number }).status === 404 ? 'Not found or deleted' : error.message : 'Failed to load configs'}
         </p>
       )}
 
@@ -245,6 +280,7 @@ export function ConfigsPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{r.email}</p>
+                    {r.remark && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{r.remark}</p>}
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${r.configType === 'vless-xhttp' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'}`}>{configTypeLabel(r.configType)}</span>
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${r.isEnabled ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>{r.isEnabled ? 'Active' : 'Disabled'}</span>

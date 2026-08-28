@@ -37,11 +37,13 @@ export const admin = {
 }
 
 export const configs = {
-  list: (query?: PaginatedQuery): Promise<ConfigResponseList> => {
+  list: (query?: PaginatedQuery & { status?: string; creator?: string }): Promise<ConfigResponseList> => {
     const params = new URLSearchParams()
     if (query?.page) params.set('page', String(query.page))
     if (query?.pageSize) params.set('pageSize', String(query.pageSize))
     if (query?.order) params.set('order', query.order)
+    if (query?.status) params.set('status', query.status)
+    if (query?.creator) params.set('creator', query.creator)
     const qs = params.toString()
     return apiFetch<ConfigResponseList>(`/config/list${qs ? `?${qs}` : ''}`)
   },
@@ -77,11 +79,12 @@ export const configs = {
 }
 
 export const subscriptions = {
-  list: (query?: PaginatedQuery): Promise<SubscriptionResponseList> => {
+  list: (query?: PaginatedQuery & { creator?: string }): Promise<SubscriptionResponseList> => {
     const params = new URLSearchParams()
     if (query?.page) params.set('page', String(query.page))
     if (query?.pageSize) params.set('pageSize', String(query.pageSize))
     if (query?.order) params.set('order', query.order)
+    if (query?.creator) params.set('creator', query.creator)
     const qs = params.toString()
     return apiFetch<SubscriptionResponseList>(
       `/subscription/list${qs ? `?${qs}` : ''}`,

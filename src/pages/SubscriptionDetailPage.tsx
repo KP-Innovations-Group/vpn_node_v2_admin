@@ -171,20 +171,29 @@ export function SubscriptionDetailPage() {
       </div>
 
       {sub.subscriptionBaseURL && (
-        <DetailCard
-          label="Subscription Link"
-          value={
-            <a
-              href={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-primary-600 hover:underline"
+        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold tracking-widest text-slate-500 dark:text-slate-400">Subscription Link</p>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`)
+                toast.success('Copied')
+              }}
+              className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
             >
-              {sub.subscriptionBaseURL}
-              {sub.subscriptionLinkUrl}
-            </a>
-          }
-        />
+              Copy
+            </button>
+          </div>
+          <a
+            href={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 block break-all text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
+          >
+            {sub.subscriptionBaseURL}
+            {sub.subscriptionLinkUrl}
+          </a>
+        </div>
       )}
 
       {sub.description && <DetailCard label="Description" value={sub.description} />}

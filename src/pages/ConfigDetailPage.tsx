@@ -144,7 +144,18 @@ export function ConfigDetailPage() {
 
       {config.vlessConfig && (
         <div className="space-y-2">
-          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Share Link</label>
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Share Link {config.remark ? `— ${config.remark}` : ''}</label>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(config.vlessConfig ?? '')
+                toast.success('Copied')
+              }}
+              className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
+            >
+              Copy
+            </button>
+          </div>
           <textarea
             readOnly
             value={config.vlessConfig}

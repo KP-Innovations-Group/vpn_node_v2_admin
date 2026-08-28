@@ -14,7 +14,7 @@ const PAGE_SIZE = 10
 
 export function SubscriptionsPage() {
   const [page, setPage] = useState(1)
-  const [order, setOrder] = useState<'asc' | 'desc'>('asc')
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc')
   const [createOpen, setCreateOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const toast = useToast()
