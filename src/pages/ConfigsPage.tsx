@@ -262,9 +262,9 @@ export function ConfigsPage() {
               ),
             },
           ]}
-          data={data?.configs}
+          data={data?.configs ?? []}
           isLoading={isLoading}
-          emptyMessage="No configs found"
+          emptyMessage={role !== 'super_admin' ? 'No configs yet — you see only your own' : 'No configs found'}
         />
       </div>
 
@@ -272,10 +272,10 @@ export function ConfigsPage() {
       <div className="grid gap-3 md:hidden">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-700" />)
-        ) : !data?.configs?.length ? (
-          <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">No configs found</p>
+        ) : !(data?.configs ?? []).length ? (
+          <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">{role !== 'super_admin' ? 'No configs yet — you see only your own. Create one.' : 'No configs found'}</p>
         ) : (
-          data.configs.map((r) => {
+          (data?.configs ?? []).map((r) => {
             const pct = r.quotaLimitBytes > 0 ? (r.quotaUsedBytes / r.quotaLimitBytes) * 100 : 0
             return (
               <div key={r.uuid} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-700 dark:bg-slate-900">

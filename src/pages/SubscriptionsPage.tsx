@@ -91,7 +91,7 @@ export function SubscriptionsPage() {
             {
               header: 'Configs',
               render: (r) => (
-                <span className="text-sm text-slate-600 dark:text-slate-400">{r.configs.length} config(s)</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">{(r.configs ?? []).length} config(s)</span>
               ),
             },
             { header: 'Creator', accessor: 'creator' },
@@ -128,7 +128,7 @@ export function SubscriptionsPage() {
               ),
             },
           ]}
-          data={subData?.subscriptions}
+          data={subData?.subscriptions ?? []}
           isLoading={isLoading}
           emptyMessage="No subscriptions found"
         />
@@ -136,14 +136,14 @@ export function SubscriptionsPage() {
       <div className="grid gap-3 md:hidden">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-700" />)
-        ) : !subData?.subscriptions?.length ? (
+        ) : !(subData?.subscriptions ?? []).length ? (
           <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">No subscriptions found</p>
         ) : (
-          subData.subscriptions.map((r) => (
+          (subData?.subscriptions ?? []).map((r) => (
             <div key={r.uuid} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-700 dark:bg-slate-900">
               <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{r.title}</p>
               <p className="mt-1 flex flex-wrap gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{r.configs.length} configs</span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{(r.configs ?? []).length} configs</span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{r.creator}</span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{formatDate(r.createdAt)}</span>
               </p>

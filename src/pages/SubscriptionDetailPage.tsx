@@ -166,7 +166,7 @@ export function SubscriptionDetailPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <DetailCard label="Title" value={sub.title} />
         <DetailCard label="Creator" value={sub.creator} />
-        <DetailCard label="Config Count" value={String(sub.configs.length)} />
+        <DetailCard label="Config Count" value={String((sub.configs ?? []).length)} />
         <DetailCard label="Created" value={formatDate(sub.createdAt)} />
       </div>
 
@@ -209,8 +209,8 @@ export function SubscriptionDetailPage() {
           </button>
         </div>
 
-        {sub.configs.length === 0 ? (
-          <p className="text-sm text-gray-500">No configs attached to this subscription.</p>
+        {(sub.configs ?? []).length === 0 ? (
+          <p className="text-sm text-slate-500 dark:text-slate-400">No configs attached to this subscription.</p>
         ) : (
           <DataTable
             columns={[
@@ -267,7 +267,7 @@ export function SubscriptionDetailPage() {
                 ),
               },
             ]}
-            data={sub.configs}
+            data={sub.configs ?? []}
             emptyMessage="No configs attached"
           />
         )}
