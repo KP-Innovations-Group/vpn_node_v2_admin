@@ -152,9 +152,11 @@ export function ConfigsPage() {
             header: 'Email',
             accessor: 'email',
             className: 'font-medium text-slate-900 dark:text-white',
+            headerClassName: 'w-[200px]',
           },
           {
             header: 'Remark',
+            headerClassName: 'w-[140px]',
             render: (r) => (
               <span className="max-w-[140px] truncate text-xs text-slate-600 dark:text-slate-400" title={r.remark ?? ''}>
                 {r.remark || '—'}
@@ -163,6 +165,7 @@ export function ConfigsPage() {
           },
           {
             header: 'Type',
+            headerClassName: 'w-[110px]',
               render: (r) => (
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -177,6 +180,7 @@ export function ConfigsPage() {
             },
             {
               header: 'Quota',
+              headerClassName: 'w-[160px]',
               render: (r) => {
                 const pct = r.quotaLimitBytes > 0 ? (r.quotaUsedBytes / r.quotaLimitBytes) * 100 : 0
                 return (
@@ -194,6 +198,7 @@ export function ConfigsPage() {
             },
             {
               header: 'Expires',
+              headerClassName: 'w-[140px]',
               render: (r) => (
                 <span className={isExpired(r.expireAt) ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}>
                   {formatDate(r.expireAt)}
@@ -202,10 +207,12 @@ export function ConfigsPage() {
             },
             {
               header: 'Conn. Limit',
+              headerClassName: 'w-[100px]',
               render: (r) => (r.connectionAllowed === 0 ? 'Unlimited' : String(r.connectionAllowed)),
             },
             {
               header: 'Status',
+              headerClassName: 'w-[100px]',
               render: (r) => (
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -219,9 +226,11 @@ export function ConfigsPage() {
             {
               header: 'Creator',
               accessor: 'creator',
+              headerClassName: 'w-[120px]',
             },
             {
               header: '',
+              headerClassName: 'w-[110px]',
               render: (r) => (
                 <div className="flex items-center gap-1">
                   <Link

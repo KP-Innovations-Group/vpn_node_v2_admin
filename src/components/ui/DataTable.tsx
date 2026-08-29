@@ -49,16 +49,29 @@ export function DataTable<T>({
     return ''
   }
 
+  // fixed layout: widths from headerClassName w-[...] else equal
+  const hasCustomWidths = columns.some((c) => c.headerClassName?.includes('w-['))
+
   return (
     <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-soft dark:border-slate-700 dark:bg-slate-900">
       <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
-      <table className="min-w-full table-fixed divide-y divide-slate-200 dark:divide-slate-700">
+      <table className="w-full table-fixed divide-y divide-slate-200 dark:divide-slate-700">
+        {hasCustomWidths && (
+          <colgroup>
+            {columns.map((c, i) => {
+              const m = c.headerClassName?.match(/w-\[(\d+)px\]/)
+              const w = m ? `${m[1]}px` : undefined
+              return <col key={i} style={w ? { width: w } : undefined} />
+            })}
+          </colgroup>
+        )}
         <thead className="bg-slate-50/80 backdrop-blur dark:bg-slate-800/80">
           <tr>
             {columns.map((col, i) => (
               <th
                 key={i}
-                className={`whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400 uppercase min-w-[120px] ${col.headerClassName ?? ''}`}
+                className={`truncate whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold tracking-widest text-slate-500 dark:text-slate-400 uppercase ${col.headerClassName ?? (!hasCustomWidths ? 'min-w-[120px]' : '')}`}
+                title={col.header}
               >
                 {col.header}
               </th>
@@ -89,8 +102,8 @@ export function DataTable<T>({
             items.map((row, i) => (
               <tr key={i} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/60">
                 {columns.map((col, j) => (
-                  <td key={j} className={`px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 ${col.className ?? ''}`}>
-                    {cellContent(col, row)}
+                  <td key={j} className={`max-w-[260px] truncate whitespace-nowrap px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 ${col.className ?? ''}`} title={typeof col.accessor === 'string' ? String((row as Record<string, unknown>)[col.accessor] ?? '') : ''}>
+                    <div className="truncate">{cellContent(col, row)}</div>
                   </td>
                 ))}
               </tr>

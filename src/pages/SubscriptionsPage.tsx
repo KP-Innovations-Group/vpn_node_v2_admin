@@ -87,22 +87,25 @@ export function SubscriptionsPage() {
       <div className="hidden md:block">
         <DataTable
           columns={[
-            { header: 'Title', accessor: 'title', className: 'font-medium text-slate-900 dark:text-white' },
+            { header: 'Title', accessor: 'title', className: 'font-medium text-slate-900 dark:text-white', headerClassName: 'w-[220px]' },
             {
               header: 'Configs',
+              headerClassName: 'w-[110px]',
               render: (r) => (
                 <span className="text-sm text-slate-600 dark:text-slate-400">{(r.configs ?? []).length} config(s)</span>
               ),
             },
-            { header: 'Creator', accessor: 'creator' },
+            { header: 'Creator', accessor: 'creator', headerClassName: 'w-[120px]' },
             {
               header: 'Created',
+              headerClassName: 'w-[140px]',
               render: (r) => (
                 <span className="text-sm text-slate-600 dark:text-slate-400">{formatDate(r.createdAt)}</span>
               ),
             },
             {
               header: '',
+              headerClassName: 'w-[110px]',
               render: (r) => (
                 <div className="flex items-center justify-end gap-1">
                   <Link
