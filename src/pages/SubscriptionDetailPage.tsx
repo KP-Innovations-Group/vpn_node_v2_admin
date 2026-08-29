@@ -173,22 +173,11 @@ export function SubscriptionDetailPage() {
 
       {sub.subscriptionBaseURL && (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold tracking-widest text-slate-500 dark:text-slate-400">Subscription Link</p>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`)
-                toast.success('Copied')
-              }}
-              className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
-            >
-              Copy
-            </button>
-          </div>
+          <p className="text-xs font-semibold tracking-widest text-slate-500 dark:text-slate-400">Subscription Link</p>
           <div className="mt-3 grid gap-4 lg:grid-cols-[220px_1fr]">
             <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40">
-              <div className="rounded-xl bg-white p-3 shadow-sm">
-                <QRCodeSVG value={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`} size={180} level="M" bgColor="#ffffff" fgColor="#0f172a" />
+              <div className="rounded-xl p-3 shadow-sm" style={{ backgroundColor: '#fff' }}>
+                <QRCodeSVG value={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`} size={180} level="M" bgColor="#ffffff" fgColor="#000000" includeMargin />
               </div>
               <p className="mt-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">Scan to subscribe</p>
               <button
@@ -209,19 +198,28 @@ export function SubscriptionDetailPage() {
                 Download SVG
               </button>
               <div className="hidden">
-                <QRCodeSVG id={`qr-sub-${sub.uuid}`} value={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`} size={512} level="M" />
+                <QRCodeSVG id={`qr-sub-${sub.uuid}`} value={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`} size={512} level="M" bgColor="#ffffff" fgColor="#000000" includeMargin />
               </div>
             </div>
-            <div>
+            <div className="relative">
               <a
                 href={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 font-mono text-xs text-primary-600 hover:underline dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400"
+                className="block break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 pr-20 font-mono text-xs text-primary-600 hover:underline dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400"
               >
                 {sub.subscriptionBaseURL}
                 {sub.subscriptionLinkUrl}
               </a>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`)
+                  toast.success('Copied')
+                }}
+                className="absolute right-2 top-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
+              >
+                Copy
+              </button>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Share this link or QR with clients. Updates when configs are attached.</p>
             </div>
           </div>

@@ -145,22 +145,11 @@ export function ConfigDetailPage() {
 
       {config.vlessConfig && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Share Link {config.remark ? `— ${config.remark}` : ''}</label>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(config.vlessConfig ?? '')
-                toast.success('Copied')
-              }}
-              className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
-            >
-              Copy
-            </button>
-          </div>
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Share Link {config.remark ? `— ${config.remark}` : ''}</label>
           <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
             <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-              <div className="rounded-xl bg-white p-3 shadow-sm">
-                <QRCodeSVG value={config.vlessConfig} size={180} level="M" bgColor="#ffffff" fgColor="#0f172a" />
+              <div className="rounded-xl p-3 shadow-sm" style={{ backgroundColor: '#fff' }}>
+                <QRCodeSVG value={config.vlessConfig} size={180} level="M" bgColor="#ffffff" fgColor="#000000" includeMargin />
               </div>
               <p className="mt-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">Scan with client</p>
               <button
@@ -181,15 +170,26 @@ export function ConfigDetailPage() {
                 Download SVG
               </button>
               <div className="hidden">
-                <QRCodeSVG id={`qr-config-${config.uuid}`} value={config.vlessConfig} size={512} level="M" />
+                <QRCodeSVG id={`qr-config-${config.uuid}`} value={config.vlessConfig} size={512} level="M" bgColor="#ffffff" fgColor="#000000" includeMargin />
               </div>
             </div>
-            <textarea
-              readOnly
-              value={config.vlessConfig}
-              rows={6}
-              className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 font-mono text-xs text-slate-600 read-only:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-            />
+            <div className="relative">
+              <textarea
+                readOnly
+                value={config.vlessConfig}
+                rows={6}
+                className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 pr-20 font-mono text-xs text-slate-600 read-only:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(config.vlessConfig ?? '')
+                  toast.success('Copied')
+                }}
+                className="absolute right-2 top-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
+              >
+                Copy
+              </button>
+            </div>
           </div>
         </div>
       )}
