@@ -11,6 +11,7 @@ import type {
 import { Modal } from '@/components/ui/Modal'
 import { DataTable } from '@/components/ui/DataTable'
 import { formatDate, formatBytes } from '@/lib/utils'
+import { QRCodeSVG } from 'qrcode.react'
 
 export function SubscriptionDetailPage() {
   const { uuid } = useParams<{ uuid: string }>()
@@ -171,7 +172,7 @@ export function SubscriptionDetailPage() {
       </div>
 
       {sub.subscriptionBaseURL && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold tracking-widest text-slate-500 dark:text-slate-400">Subscription Link</p>
             <button
@@ -184,15 +185,46 @@ export function SubscriptionDetailPage() {
               Copy
             </button>
           </div>
-          <a
-            href={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 block break-all text-sm font-medium text-primary-600 hover:underline dark:text-primary-400"
-          >
-            {sub.subscriptionBaseURL}
-            {sub.subscriptionLinkUrl}
-          </a>
+          <div className="mt-3 grid gap-4 lg:grid-cols-[220px_1fr]">
+            <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+              <div className="rounded-xl bg-white p-3 shadow-sm">
+                <QRCodeSVG value={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`} size={180} level="M" bgColor="#ffffff" fgColor="#0f172a" />
+              </div>
+              <p className="mt-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">Scan to subscribe</p>
+              <button
+                onClick={() => {
+                  const svg = document.getElementById(`qr-sub-${sub.uuid}`)
+                  if (!svg) return
+                  const s = new XMLSerializer().serializeToString(svg)
+                  const blob = new Blob([s], { type: 'image/svg+xml' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `${sub.title}-qr.svg`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                className="mt-2 text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
+              >
+                Download SVG
+              </button>
+              <div className="hidden">
+                <QRCodeSVG id={`qr-sub-${sub.uuid}`} value={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`} size={512} level="M" />
+              </div>
+            </div>
+            <div>
+              <a
+                href={`${sub.subscriptionBaseURL}${sub.subscriptionLinkUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 font-mono text-xs text-primary-600 hover:underline dark:border-slate-700 dark:bg-slate-800 dark:text-primary-400"
+              >
+                {sub.subscriptionBaseURL}
+                {sub.subscriptionLinkUrl}
+              </a>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Share this link or QR with clients. Updates when configs are attached.</p>
+            </div>
+          </div>
         </div>
       )}
 

@@ -5,6 +5,7 @@ import { ApiError, configs } from '@/lib/api-client'
 import { useToast } from '@/lib/useToast'
 import { Modal } from '@/components/ui/Modal'
 import { formatBytes, formatDate, isExpired } from '@/lib/utils'
+import { QRCodeSVG } from 'qrcode.react'
 
 export function ConfigDetailPage() {
   const { uuid } = useParams<{ uuid: string }>()
@@ -143,7 +144,7 @@ export function ConfigDetailPage() {
       </div>
 
       {config.vlessConfig && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Share Link {config.remark ? `— ${config.remark}` : ''}</label>
             <button
@@ -156,12 +157,40 @@ export function ConfigDetailPage() {
               Copy
             </button>
           </div>
-          <textarea
-            readOnly
-            value={config.vlessConfig}
-            rows={4}
-            className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 font-mono text-xs text-slate-600 read-only:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          />
+          <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+            <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+              <div className="rounded-xl bg-white p-3 shadow-sm">
+                <QRCodeSVG value={config.vlessConfig} size={180} level="M" bgColor="#ffffff" fgColor="#0f172a" />
+              </div>
+              <p className="mt-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">Scan with client</p>
+              <button
+                onClick={() => {
+                  const svg = document.getElementById(`qr-config-${config.uuid}`)
+                  if (!svg) return
+                  const s = new XMLSerializer().serializeToString(svg)
+                  const blob = new Blob([s], { type: 'image/svg+xml' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `${config.email}-qr.svg`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                className="mt-2 text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
+              >
+                Download SVG
+              </button>
+              <div className="hidden">
+                <QRCodeSVG id={`qr-config-${config.uuid}`} value={config.vlessConfig} size={512} level="M" />
+              </div>
+            </div>
+            <textarea
+              readOnly
+              value={config.vlessConfig}
+              rows={6}
+              className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 font-mono text-xs text-slate-600 read-only:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            />
+          </div>
         </div>
       )}
 
