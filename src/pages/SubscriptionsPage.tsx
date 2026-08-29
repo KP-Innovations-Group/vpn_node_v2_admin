@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, subscriptions } from '@/lib/api-client'
 import { useToast } from '@/lib/useToast'
@@ -10,23 +10,46 @@ import { SubscriptionCreateForm } from '@/components/subscription/SubscriptionCr
 import { formatDate } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 
+function highlight(text: string, q: string) {
+  if (!q) return text
+  const idx = text.toLowerCase().indexOf(q.toLowerCase())
+  if (idx === -1) return text
+  const before = text.slice(0, idx)
+  const match = text.slice(idx, idx + q.length)
+  const after = text.slice(idx + q.length)
+  return (
+    <>
+      {before}
+      <mark className="rounded bg-amber-200 px-0.5 text-slate-900 dark:bg-amber-400">{match}</mark>
+      {after}
+    </>
+  )
+}
+
 const PAGE_SIZE = 10
 
 export function SubscriptionsPage() {
   const [page, setPage] = useState(1)
   const [order, setOrder] = useState<'asc' | 'desc'>('desc')
+  const [q, setQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const toast = useToast()
   const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedQ(q.trim()); setPage(1) }, 300)
+    return () => clearTimeout(t)
+  }, [q])
 
   const {
     data: subData,
     error,
     isLoading,
   } = useQuery({
-    queryKey: ['subscriptions', page, order],
-    queryFn: () => subscriptions.list({ page, pageSize: PAGE_SIZE, order }),
+    queryKey: ['subscriptions', page, order, debouncedQ],
+    queryFn: () => subscriptions.list({ page, pageSize: PAGE_SIZE, order, q: debouncedQ || undefined }),
   })
 
 
@@ -78,6 +101,17 @@ export function SubscriptionsPage() {
         </div>
       </div>
 
+      <div className="relative">
+        <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search title, description, email, remark, uuid…"
+          className="block w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-9 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+        />
+        {q && <button onClick={() => setQ('')} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700">✕</button>}
+      </div>
+
       {error && (
         <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
           {error instanceof ApiError ? error.message : 'Failed to load subscriptions'}
@@ -87,7 +121,7 @@ export function SubscriptionsPage() {
       <div className="hidden md:block">
         <DataTable
           columns={[
-            { header: 'Title', accessor: 'title', className: 'font-medium text-slate-900 dark:text-white', headerClassName: 'w-[220px]' },
+            { header: 'Title', headerClassName: 'w-[220px]', className: 'font-medium text-slate-900 dark:text-white', render: (r) => <span className="truncate" title={r.title}>{highlight(r.title, debouncedQ)}</span> },
             {
               header: 'Configs',
               headerClassName: 'w-[110px]',
@@ -144,7 +178,7 @@ export function SubscriptionsPage() {
         ) : (
           (subData?.subscriptions ?? []).map((r) => (
             <div key={r.uuid} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-700 dark:bg-slate-900">
-              <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{r.title}</p>
+              <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{highlight(r.title, debouncedQ) as never}</p>
               <p className="mt-1 flex flex-wrap gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{(r.configs ?? []).length} configs</span>
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{r.creator}</span>

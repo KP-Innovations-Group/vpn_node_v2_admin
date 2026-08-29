@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, configs, admin } from '@/lib/api-client'
 import { useToast } from '@/lib/useToast'
@@ -11,6 +11,22 @@ import { ConfigForm } from '@/components/config/ConfigForm'
 import { formatBytes, formatDate, isExpired } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 
+function highlight(text: string, q: string) {
+  if (!q) return text
+  const idx = text.toLowerCase().indexOf(q.toLowerCase())
+  if (idx === -1) return text
+  const before = text.slice(0, idx)
+  const match = text.slice(idx, idx + q.length)
+  const after = text.slice(idx + q.length)
+  return (
+    <>
+      {before}
+      <mark className="rounded bg-amber-200 px-0.5 text-slate-900 dark:bg-amber-400">{match}</mark>
+      {after}
+    </>
+  )
+}
+
 const PAGE_SIZE = 10
 
 export function ConfigsPage() {
@@ -18,19 +34,26 @@ export function ConfigsPage() {
   const [order, setOrder] = useState<'asc' | 'desc'>('desc')
   const [status, setStatus] = useState<'all' | 'enabled' | 'disabled'>('all')
   const [creatorFilter, setCreatorFilter] = useState<string>('')
+  const [q, setQ] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const toast = useToast()
   const queryClient = useQueryClient()
   const { role, can } = useAuth()
 
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedQ(q.trim()); setPage(1) }, 300)
+    return () => clearTimeout(t)
+  }, [q])
+
   const {
     data,
     error,
     isLoading,
   } = useQuery({
-    queryKey: ['configs', page, order, status, creatorFilter],
-    queryFn: () => configs.list({ page, pageSize: PAGE_SIZE, order, status: status === 'all' ? undefined : status, creator: creatorFilter || undefined }),
+    queryKey: ['configs', page, order, status, creatorFilter, debouncedQ],
+    queryFn: () => configs.list({ page, pageSize: PAGE_SIZE, order, status: status === 'all' ? undefined : status, creator: creatorFilter || undefined, q: debouncedQ || undefined }),
   })
 
   const { data: adminList } = useQuery({
@@ -117,6 +140,19 @@ export function ConfigsPage() {
         </div>
       </div>
 
+      <div className="relative">
+        <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search email, remark, uuid…"
+          className="block w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-9 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+        />
+        {q && (
+          <button onClick={() => setQ('')} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700">✕</button>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
           {(['all', 'enabled', 'disabled'] as const).map((s) => (
@@ -150,16 +186,19 @@ export function ConfigsPage() {
           columns={[
           {
             header: 'Email',
-            accessor: 'email',
-            className: 'font-medium text-slate-900 dark:text-white',
             headerClassName: 'w-[200px]',
+            render: (r) => (
+              <span className="max-w-[190px] truncate font-medium text-slate-900 dark:text-white" title={r.email}>
+                {highlight(r.email, debouncedQ)}
+              </span>
+            ),
           },
           {
             header: 'Remark',
             headerClassName: 'w-[140px]',
             render: (r) => (
               <span className="max-w-[140px] truncate text-xs text-slate-600 dark:text-slate-400" title={r.remark ?? ''}>
-                {r.remark || '—'}
+                {r.remark ? highlight(r.remark, debouncedQ) as never : '—'}
               </span>
             ),
           },
@@ -290,8 +329,8 @@ export function ConfigsPage() {
               <div key={r.uuid} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-700 dark:bg-slate-900">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{r.email}</p>
-                    {r.remark && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{r.remark}</p>}
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{highlight(r.email, debouncedQ) as never}</p>
+                    {r.remark && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{highlight(r.remark, debouncedQ) as never}</p>}
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${r.configType === 'vless-xhttp' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'}`}>{configTypeLabel(r.configType)}</span>
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${r.isEnabled ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>{r.isEnabled ? 'Active' : 'Disabled'}</span>
