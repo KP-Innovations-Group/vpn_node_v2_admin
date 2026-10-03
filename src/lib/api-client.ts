@@ -4,6 +4,8 @@ import type {
   AdminLoginResponse,
   ConfigConnectionLimitRequest,
   ConfigCreateRequest,
+  ConfigDecreaseRequest,
+  ConfigExpirationRequest,
   ConfigIncreaseRequest,
   ConfigResponse,
   ConfigResponseList,
@@ -75,6 +77,18 @@ export const configs = {
     apiFetch<void>('/config/increase', {
       method: 'PATCH',
       body: JSON.stringify({ uuid, increaseBytes } as ConfigIncreaseRequest),
+    }),
+
+  decreaseQuota: (uuid: string, decreaseBytes: number): Promise<void> =>
+    apiFetch<void>('/config/decrease', {
+      method: 'PATCH',
+      body: JSON.stringify({ uuid, decreaseBytes } as ConfigDecreaseRequest),
+    }),
+
+  setExpiration: (uuid: string, expirationTime: string): Promise<void> =>
+    apiFetch<void>('/config/expiration', {
+      method: 'PATCH',
+      body: JSON.stringify({ uuid, expirationTime } as ConfigExpirationRequest),
     }),
 
   setConnectionAllowed: (uuid: string, connectionAllowed: number): Promise<void> =>

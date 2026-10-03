@@ -35,9 +35,15 @@ export function SubscriptionDetailPage() {
     enabled: Boolean(uuid),
   })
 
-  const { data: configListData } = useQuery({
+  const {
+    data: configListData,
+    error: configListError,
+    isLoading: configListLoading,
+  } = useQuery({
     queryKey: ['configs-all'],
-    queryFn: () => configs.list({ page: 1, pageSize: 100, order: 'asc' }),
+    // 50 is the node's hard cap — pageSize > 50 is rejected with
+    // "400 pageSize must be between 1 and 50".
+    queryFn: () => configs.list({ page: 1, pageSize: 50, order: 'asc' }),
     enabled: attachOpen,
     staleTime: 5 * 60_000,
   })
@@ -309,32 +315,42 @@ export function SubscriptionDetailPage() {
         title="Attach Configs"
       >
         <div className="space-y-4">
-          <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2">
-            {availableConfigs.length === 0 ? (
-              <p className="text-xs text-gray-500">No standalone configs available to attach.</p>
-            ) : (
-              availableConfigs.map((cfg) => (
-                <label
-                  key={cfg.uuid}
-                  className="flex items-center gap-2 rounded p-1 text-sm hover:bg-surface-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedAttach.includes(cfg.uuid)}
-                    onChange={(e) =>
-                      setSelectedAttach(
-                        e.target.checked
-                          ? [...selectedAttach, cfg.uuid]
-                          : selectedAttach.filter((u) => u !== cfg.uuid),
-                      )
-                    }
-                  />
-                  <span className="truncate">{cfg.email}</span>
-                  <span className="text-xs text-gray-400">({cfg.configType})</span>
-                </label>
-              ))
-            )}
-          </div>
+          {configListError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+              {configListError instanceof ApiError
+                ? configListError.message
+                : 'Failed to load configs'}
+            </div>
+          ) : (
+            <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2">
+              {configListLoading ? (
+                <p className="text-xs text-gray-500">Loading configs…</p>
+              ) : availableConfigs.length === 0 ? (
+                <p className="text-xs text-gray-500">No standalone configs available to attach.</p>
+              ) : (
+                availableConfigs.map((cfg) => (
+                  <label
+                    key={cfg.uuid}
+                    className="flex items-center gap-2 rounded p-1 text-sm hover:bg-surface-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAttach.includes(cfg.uuid)}
+                      onChange={(e) =>
+                        setSelectedAttach(
+                          e.target.checked
+                            ? [...selectedAttach, cfg.uuid]
+                            : selectedAttach.filter((u) => u !== cfg.uuid),
+                        )
+                      }
+                    />
+                    <span className="truncate">{cfg.email}</span>
+                    <span className="text-xs text-gray-400">({cfg.configType})</span>
+                  </label>
+                ))
+              )}
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <button
               onClick={() => setAttachOpen(false)}

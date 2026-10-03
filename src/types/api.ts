@@ -42,6 +42,16 @@ export interface ConfigIncreaseRequest {
   increaseBytes: number
 }
 
+export interface ConfigDecreaseRequest {
+  uuid: string
+  decreaseBytes: number
+}
+
+export interface ConfigExpirationRequest {
+  uuid: string
+  expirationTime: string
+}
+
 export interface ConfigConnectionLimitRequest {
   uuid: string
   connectionAllowed: number
