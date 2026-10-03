@@ -8,7 +8,7 @@ import { DataTable } from '@/components/ui/DataTable'
 import { Pagination } from '@/components/ui/Pagination'
 import { Modal } from '@/components/ui/Modal'
 import { ConfigForm } from '@/components/config/ConfigForm'
-import { formatBytes, formatDate, isExpired } from '@/lib/utils'
+import { formatBytes, formatDate, hasExpiry, isExpired } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 
 function highlight(text: string, q: string) {
@@ -239,8 +239,14 @@ export function ConfigsPage() {
               header: 'Expires',
               headerClassName: 'w-[140px]',
               render: (r) => (
-                <span className={isExpired(r.expireAt) ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}>
-                  {formatDate(r.expireAt)}
+                <span
+                  className={
+                    hasExpiry(r.expireAt) && isExpired(r.expireAt)
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-slate-700 dark:text-slate-300'
+                  }
+                >
+                  {hasExpiry(r.expireAt) ? formatDate(r.expireAt) : 'No expiry'}
                 </span>
               ),
             },
@@ -343,7 +349,7 @@ export function ConfigsPage() {
                   <div className="mt-1 h-2 rounded-full bg-slate-200 dark:bg-slate-700"><div className={`h-2 rounded-full ${pct > 90 ? 'bg-red-500' : 'bg-primary-600'}`} style={{ width: `${Math.min(100, pct)}%` }} /></div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{isExpired(r.expireAt) ? 'Expired' : formatDate(r.expireAt)}</span>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{hasExpiry(r.expireAt) ? (isExpired(r.expireAt) ? 'Expired' : formatDate(r.expireAt)) : 'No expiry'}</span>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 dark:bg-slate-800">{r.connectionAllowed === 0 ? 'Unlimited' : `${r.connectionAllowed} conns`}</span>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
