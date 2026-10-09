@@ -208,6 +208,26 @@ export function nextExpireAtCheck(now: Date, proposed: Date | null): ExpireCheck
   return { ok: true, newExpireAt }
 }
 
+/**
+ * The states a config's relay can be in, for deciding what to *display*.
+ *
+ * `relayEnabled` is the stored flag and is always present; `relayConfig` is the
+ * link, and is omitted whenever the node cannot build one. Only the link decides
+ * whether a link is shown — it is displayed whenever it is present — while the
+ * control follows the flag, read directly at the call site. The flag is never
+ * derived from the link's absence: that would show the control as off over a config
+ * that is flagged, leaving the operator unable to switch relaying off.
+ */
+export type RelayState = 'off' | 'working' | 'flagged-no-link'
+
+export function relayState(config: { relayEnabled: boolean; relayConfig?: string }): RelayState {
+  // A link the node sent is always shown, whatever the flag reads: the fields can
+  // only disagree if the node is inconsistent, and hiding a working link is the
+  // worse of the two possible failures.
+  if (config.relayConfig) return 'working'
+  return config.relayEnabled ? 'flagged-no-link' : 'off'
+}
+
 export function formatPercent(part: number, total: number): string {
   if (total === 0) return '0%'
   const pct = (part / total) * 100

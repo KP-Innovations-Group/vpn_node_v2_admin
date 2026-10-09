@@ -7,6 +7,7 @@ import type {
   ConfigDecreaseRequest,
   ConfigExpirationRequest,
   ConfigIncreaseRequest,
+  ConfigRelayRequest,
   ConfigResponse,
   ConfigResponseList,
   ConfigUUIDRequest,
@@ -95,6 +96,19 @@ export const configs = {
     apiFetch<void>('/config/connection-allowed', {
       method: 'PATCH',
       body: JSON.stringify({ uuid, connectionAllowed } as ConfigConnectionLimitRequest),
+    }),
+
+  /**
+   * Switches a config's relay on or off. `relayEnabled` is a required argument —
+   * never optional, never defaulted — because the node rejects a body that omits it
+   * rather than guessing `false`. The field is always serialised, in both
+   * directions. Returns 204 with an empty body, so the caller refetches the config
+   * for the new state rather than parsing a response.
+   */
+  setRelay: (uuid: string, relayEnabled: boolean): Promise<void> =>
+    apiFetch<void>('/config/relay', {
+      method: 'PATCH',
+      body: JSON.stringify({ uuid, relayEnabled } as ConfigRelayRequest),
     }),
 
   delete: (uuid: string): Promise<void> =>

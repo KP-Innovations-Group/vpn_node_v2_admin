@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, configs } from '@/lib/api-client'
+import { useAuth } from '@/lib/auth-context'
 import { useToast } from '@/lib/useToast'
 import { Modal } from '@/components/ui/Modal'
 import {
@@ -13,6 +14,7 @@ import {
   nextExpireAtCheck,
   nextQuotaAfterDecrease,
   ONE_GB,
+  relayState,
   toDateTimeLocalValue,
 } from '@/lib/utils'
 import type { ConfigResponse } from '@/types/api'
@@ -23,6 +25,7 @@ export function ConfigDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const toast = useToast()
+  const { logout } = useAuth()
   const [increaseOpen, setIncreaseOpen] = useState(false)
   const [decreaseOpen, setDecreaseOpen] = useState(false)
   const [expirationOpen, setExpirationOpen] = useState(false)
@@ -138,6 +141,51 @@ export function ConfigDetailPage() {
     }
   }
 
+  // Turning relaying on or off is a single call with no form to fill in, so it
+  // happens on the click. The toggle is never flipped optimistically and never
+  // locked while the request is in flight: the node has the final say on the new
+  // state (it can refuse an enable), and the call is idempotent, so the refetch is
+  // what settles the control and a double-tap costs nothing.
+  const handleRelay = async () => {
+    if (!config) return
+    try {
+      await configs.setRelay(config.uuid, !config.relayEnabled)
+      toast.success(config.relayEnabled ? 'Relay disabled' : 'Relay enabled')
+      refetch()
+      queryClient.invalidateQueries({ queryKey: ['configs'] })
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // A 401 is not "this action failed" but "the session is gone": hand it to the
+        // same logout the shell uses, which is what actually routes to the login page.
+        if (err.status === 401) {
+          logout()
+          return
+        }
+        // The config is gone, so this page is stale: refresh the list and go back to it.
+        if (err.status === 404) {
+          queryClient.invalidateQueries({ queryKey: ['configs'] })
+          toast.error(err.message, 'This config no longer exists')
+          navigate('/configs')
+          return
+        }
+        // A node-side failure rather than a refusal, so it is worth a log line and is
+        // safe to retry — the control is never disabled, so clicking again is the retry.
+        if (err.status >= 500) {
+          console.error('Failed to update relay', err)
+          toast.error(`${err.message} Retrying this can work.`, 'Node error')
+          return
+        }
+        // Refusals (no relay configured on this node, or a type that cannot relay)
+        // arrive as a 400 whose message is the node's own reason, shown verbatim. The
+        // "relay is not configured" one deliberately gets no retry: it is an operator
+        // problem on the node, and retrying will never work.
+        toast.error(err.message, 'Error')
+        return
+      }
+      toast.error('Failed to update relay', 'Error')
+    }
+  }
+
   if (isLoading) {
     return <div className="text-center py-12 text-slate-500 dark:text-slate-400">Loading config…</div>
   }
@@ -148,6 +196,30 @@ export function ConfigDetailPage() {
         {error instanceof ApiError ? error.message : 'Config not found'}
       </div>
     )
+  }
+
+  // relayState keeps the flag and the link apart: `relayEnabled` decides the
+  // control, `relayConfig` decides whether there is a link to show. Disagreeing
+  // fields mean the node is inconsistent, and showing a link it actually sent is
+  // the safer of the two ways to be wrong.
+  const relay = relayState(config)
+  const relayLink = relay === 'working' ? config.relayConfig : undefined
+
+  // Label, disabled state and explanation derived once here, so the three-way state
+  // is interpreted in a single place instead of being re-decided at each use.
+  const relayTypeBlocked = config.configType === 'vless-xhttp' && !config.relayEnabled
+  const relayControl = {
+    on: config.relayEnabled,
+    label: config.relayEnabled ? 'Disable Relay (tunnel)' : 'Enable Relay (tunnel)',
+    disabled: relayTypeBlocked,
+    title: relayTypeBlocked
+      ? 'Only WebSocket configs can be relayed in this version'
+      : config.relayEnabled
+        ? 'Stop offering the relay link. The direct link keeps working.'
+        : 'Offer a second, relayed link beside the direct one',
+    explanation: relayTypeBlocked
+      ? 'Only WebSocket (VLESS) configs can be relayed in this version. This one is VLESS-XHTTP.'
+      : undefined,
   }
 
   return (
@@ -181,6 +253,12 @@ export function ConfigDetailPage() {
           subColor="text-red-600"
         />
         <DetailCard label="Concurrent Limit" value={config.connectionAllowed === 0 ? 'Unlimited' : String(config.connectionAllowed)} />
+        <DetailCard
+          label="Relay"
+          value={config.relayEnabled ? 'On' : 'Off'}
+          sub={relay === 'flagged-no-link' ? 'Flagged, but no relay link was built' : undefined}
+          subColor="text-amber-600"
+        />
         <DetailCard label="Created" value={formatDate(config.createdAt)} />
         <DetailCard label="Updated" value={formatDate(config.updatedAt)} />
         <QuotaCard used={config.quotaUsedBytes} limit={config.quotaLimitBytes} />
@@ -237,6 +315,68 @@ export function ConfigDetailPage() {
         </div>
       )}
 
+      {/*
+        A separate block rather than a shared component with the direct link above:
+        leaving that markup untouched is what guarantees relaying cannot change the
+        direct link, which is the promise the whole feature rests on. Do not fold
+        these two together without preserving that guarantee.
+      */}
+      {relayLink && (
+        <div className="space-y-3">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Relay Link</label>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            This config also works through a relay, for networks that cannot reach the node directly. Give the
+            customer both links — their app will use whichever reaches the network. The direct link above is
+            unchanged and still works, so do not replace it with this one.
+          </p>
+          <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+            <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+              <div className="rounded-xl p-3 shadow-sm" style={{ backgroundColor: '#fff' }}>
+                <QRCodeSVG value={relayLink} size={180} level="M" bgColor="#ffffff" fgColor="#000000" includeMargin />
+              </div>
+              <p className="mt-2 text-center text-xs font-medium text-slate-500 dark:text-slate-400">Scan with client</p>
+              <button
+                onClick={() => {
+                  const svg = document.getElementById(`qr-relay-${config.uuid}`)
+                  if (!svg) return
+                  const s = new XMLSerializer().serializeToString(svg)
+                  const blob = new Blob([s], { type: 'image/svg+xml' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `${config.email}-relay-qr.svg`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                className="mt-2 text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400"
+              >
+                Download SVG
+              </button>
+              <div className="hidden">
+                <QRCodeSVG id={`qr-relay-${config.uuid}`} value={relayLink} size={512} level="M" bgColor="#ffffff" fgColor="#000000" includeMargin />
+              </div>
+            </div>
+            <div className="relative">
+              <textarea
+                readOnly
+                value={relayLink}
+                rows={6}
+                className="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 pr-20 font-mono text-xs text-slate-600 read-only:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(relayLink)
+                  toast.success('Copied')
+                }}
+                className="absolute right-2 top-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         <button
           onClick={toggleEnabled}
@@ -282,7 +422,59 @@ export function ConfigDetailPage() {
         >
           Connection Limit
         </button>
+        {/*
+          Only the enable direction is blocked, and only for a type the node refuses to
+          relay. The off-switch is never gated by anything: a config must stay
+          releasable even when the node's own relay setup is what is broken. Nothing
+          here pre-validates the request either — the node decides, and its message is
+          shown. This is why `disabled` reads `relayEnabled` and not `relayState`: if
+          the two fields ever disagree, the control has to follow the flag, or a
+          flagged config could end up impossible to release.
+        */}
+        <div className="flex flex-col">
+          <button
+            onClick={handleRelay}
+            disabled={relayControl.disabled}
+            title={relayControl.title}
+            className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${
+              relayControl.on
+                ? 'border border-amber-600 text-amber-700 hover:bg-amber-50 dark:border-amber-500 dark:text-amber-300'
+                : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
+            } disabled:cursor-not-allowed disabled:opacity-60`}
+          >
+            {relayControl.label}
+          </button>
+          {relayControl.explanation && (
+            <p className="mt-1.5 max-w-xs text-xs text-slate-500 dark:text-slate-400">{relayControl.explanation}</p>
+          )}
+        </div>
       </div>
+
+      {/* The relay warnings sit with the control rather than with the links: they
+          describe what the flag means for this config, and this is where it is set. */}
+      {relay === 'flagged-no-link' && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="font-semibold">This config is flagged for relaying, but the node built no relay link.</p>
+          <p className="mt-1 text-xs">
+            The node lost its relay configuration after the flag was set — it has no relay configured, or it could not
+            build the link. That is a problem on the node, in its environment, and nothing on this page can fix it; the
+            customer is still connecting directly in the meantime. Relaying can be switched off here regardless, and
+            should be if the relay is not coming back — otherwise report it to whoever runs the node.
+          </p>
+        </div>
+      )}
+
+      {config.relayEnabled && relayLink && config.connectionAllowed > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="font-semibold">Per-device limits stop binding on a relayed config.</p>
+          <p className="mt-1 text-xs">
+            The node counts a device by client IP, and behind a relay every customer arrives from the relay&rsquo;s
+            single IP. So the concurrent-device limit set here ({config.connectionAllowed}) cannot be enforced for
+            relayed traffic — a relayed config effectively admits unlimited real devices. This is an accepted
+            limitation of relaying rather than a bug, and the direct link still honours the limit.
+          </p>
+        </div>
+      )}
 
       <Modal isOpen={increaseOpen} onClose={() => setIncreaseOpen(false)} title="Increase Quota">
         <IncreaseQuotaForm config={config} onSubmit={handleIncrease} isLoading={isMutating} />

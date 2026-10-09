@@ -12,6 +12,20 @@ export interface ConfigResponse {
   isDeleted: boolean
   configType: ConfigType
   vlessConfig?: string
+  /**
+   * The relay (tunnel) share link, present only when relaying is enabled for this
+   * config *and* this node is able to build a relay link. `vlessConfig` above stays
+   * the direct link either way: relaying adds a second link, it never replaces the
+   * first, and the customer's app is expected to hold both.
+   */
+  relayConfig?: string
+  /**
+   * The stored relay flag. Always present, including when `false`, and a different
+   * question from whether `relayConfig` is set: a config can be flagged while this
+   * node has no relay to build a link from. Never infer this field from
+   * `relayConfig` — use `relayState` in `lib/utils` instead.
+   */
+  relayEnabled: boolean
   creator: Creator
   createdAt: string
   updatedAt: string
@@ -55,6 +69,22 @@ export interface ConfigExpirationRequest {
 export interface ConfigConnectionLimitRequest {
   uuid: string
   connectionAllowed: number
+}
+
+/**
+ * Toggles whether a config offers the relay link.
+ *
+ * `relayEnabled` is deliberately not optional and is not defaulted anywhere in the
+ * panel: the node refuses a body that omits it with `400`. With a plain boolean the
+ * node could not tell `{ "uuid": "…" }` from `{ "uuid": "…", "relayEnabled": false }`,
+ * so a dropped or renamed field would silently switch relaying off and report
+ * success — and since disabling is the one direction that by design never fails,
+ * nothing downstream would surface the mistake. Required here so that the omission
+ * the node rejects is a compile error before it is a 400.
+ */
+export interface ConfigRelayRequest {
+  uuid: string
+  relayEnabled: boolean
 }
 
 export interface SubscriptionConfigResponse {
