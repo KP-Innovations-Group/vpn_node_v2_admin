@@ -69,7 +69,10 @@ The panel talks to these endpoints on the node (all under `/api/v1`):
 | Config disable | PATCH    | `/config/disable`                      | Bearer JWT |
 | Config enable  | PATCH    | `/config/enable`                       | Bearer JWT |
 | Config quota+  | PATCH    | `/config/increase`                     | Bearer JWT |
+| Config quota-  | PATCH    | `/config/decrease`                     | Bearer JWT |
+| Config expiry  | PATCH    | `/config/expiration`                   | Bearer JWT |
 | Conn limit     | PATCH    | `/config/connection-allowed`           | Bearer JWT |
+| Config relay   | PATCH    | `/config/relay`                        | Bearer JWT |
 | Config delete  | DELETE   | `/config/delete`                       | Bearer JWT |
 | Sub list       | GET      | `/subscription/list`                   | Bearer JWT |
 | Sub get        | GET      | `/subscription/:uuid`                  | Bearer JWT |
